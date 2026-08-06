@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大学進学にともなう都道府県間移動 2015-2025</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --plane: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --muted: #898781;
+    --gridline: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --diagonal: #e6e5e0;
+    --accent: #2a78d6;
+  }
+  /* 暗色の値。OS 設定と、画面上の配色トグルの両方から適用する。 */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --plane: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --muted: #898781;
+      --gridline: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --diagonal: #43423e;
+      --accent: #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --gridline: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --diagonal: #43423e;
+    --accent: #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px 20px 48px;
+    background: var(--plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.01em; }
+
+  .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 62ch; }
+
+  .nav { margin: 0 0 20px; font-size: 13px; }
+  .nav a { color: var(--accent); }
+
+  .panel {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
+    margin-bottom: 16px;
+  }
+
+  .segmented {
+    display: inline-flex;
+    border: 1px solid var(--axis);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .segmented button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+  .segmented button + button { border-left: 1px solid var(--axis); }
+  .segmented button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+  .play {
+    appearance: none;
+    border: 1px solid var(--axis);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 13px;
+    padding: 6px 14px;
+    cursor: pointer;
+    min-width: 84px;
+  }
+
+  .timeline { flex: 1 1 260px; display: flex; align-items: center; gap: 12px; min-width: 260px; }
+  .timeline input[type="range"] { flex: 1; accent-color: var(--accent); }
+
+  .year {
+    font-size: 22px;
+    font-variant-numeric: tabular-nums;
+    min-width: 4.2em;
+    text-align: right;
+  }
+  .year small { display: block; font-size: 11px; color: var(--muted); line-height: 1.2; }
+
+  .chart { position: relative; }
+  canvas { display: block; max-width: 100%; }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 90ms;
+    z-index: 2;
+  }
+  .tooltip strong { font-size: 13px; }
+  .tooltip .num { font-variant-numeric: tabular-nums; }
+  .tooltip .sub { color: var(--text-secondary); }
+
+  .legend { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .legend .bar { width: 200px; height: 10px; border-radius: 2px; border: 1px solid var(--border); }
+  .legend .ticks {
+    position: relative;
+    width: 220px;
+    height: 14px;
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .legend .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .legend .note { font-size: 12px; color: var(--text-secondary); }
+  .legend .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background: var(--diagonal);
+    border: 1px solid var(--border);
+    vertical-align: -1px;
+    margin-right: 4px;
+  }
+
+  .summary { display: flex; gap: 28px; flex-wrap: wrap; margin: 18px 0 0; }
+  .stat .label { font-size: 11px; color: var(--muted); letter-spacing: 0.02em; }
+  .stat .value { font-size: 19px; font-variant-numeric: tabular-nums; }
+  .stat .value small { font-size: 12px; color: var(--text-secondary); }
+
+  details { margin-top: 20px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
+  table { border-collapse: collapse; margin-top: 10px; font-size: 12px; width: 100%; }
+  th, td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--gridline); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  footer { color: var(--muted); font-size: 12px; margin-top: 22px; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>大学進学にともなう都道府県間移動</h1>
+  <p class="lede">
+    縦軸が出身高校の所在地、横軸が入学した大学（学部）の所在地。セルの濃さが入学者数である。
+    左上から右下に伸びる対角線上は県内進学。
+    出典は文部科学省「学校基本調査」の各年度「出身高校の所在地県別入学者数」。
+  </p>
+  <p class="nav">
+    <a href="graph.html">地図上のノードとエッジで見る</a>
+    ・
+    <a href="schools.html">高校と大学の設置数と突き合わせる</a>
+  </p>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="segmented" role="group" aria-label="表示する値">
+        <button type="button" id="mode-count" aria-pressed="true">実数</button>
+        <button type="button" id="mode-share" aria-pressed="false">流出構成比</button>
+      </div>
+      <button type="button" class="play" id="play">▶ 再生</button>
+      <button type="button" class="play" id="theme" aria-label="配色の切り替え">配色: 明</button>
+      <div class="timeline">
+        <input type="range" id="slider" min="0" max="1000" value="0" step="1"
+               aria-label="年度" aria-valuetext="2015年度">
+        <div class="year" id="year-label">2015<small>年度</small></div>
+      </div>
+    </div>
+
+    <div class="chart">
+      <canvas id="heatmap"></canvas>
+      <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="legend">
+      <span class="note" id="legend-title">入学者数</span>
+      <div>
+        <div class="bar" id="legend-bar"></div>
+        <div class="ticks" id="legend-ticks"></div>
+      </div>
+      <span class="note" id="diagonal-note" hidden><span class="swatch"></span>対角 = 県内進学（分母から除外）</span>
+    </div>
+
+    <div class="summary">
+      <div class="stat">
+        <div class="label">県外進学者</div>
+        <div class="value" id="stat-movers">–</div>
+      </div>
+      <div class="stat">
+        <div class="label">県外進学率</div>
+        <div class="value" id="stat-rate">–</div>
+      </div>
+      <div class="stat">
+        <div class="label">最大の純流入</div>
+        <div class="value" id="stat-top-in">–</div>
+      </div>
+      <div class="stat">
+        <div class="label">最大の純流出</div>
+        <div class="value" id="stat-top-out">–</div>
+      </div>
+    </div>
+
+    <details>
+      <summary>表で見る（選択年の上位40流動）</summary>
+      <table>
+        <thead>
+          <tr>
+            <th>出身高校の所在地</th>
+            <th>大学の所在地</th>
+            <th class="num">入学者数</th>
+            <th class="num">流出構成比</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </details>
+  </div>
+
+  <footer>
+    セルにカーソルを合わせると内訳が出る。クリックで固定・再クリックで解除。
+    年をまたぐ動きは色の補間で見せているが、数値は常に最寄りの年度の実数である。
+    「その他」（海外・不明の高校出身）は都道府県に対応付けられないため除外している。
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  const N = OD_DATA.prefectures.length;
+  const YEARS = OD_DATA.years;
+
+  // 逐次配色（青、100→700）。明色モードでは最も薄い段が背景に溶け、ゼロ付近が自然に沈む。
+  const RAMP = [
+    "#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7", "#3987e5",
+    "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b",
+  ];
+  const DARK_SURFACE = "#1a1a19";
+
+  const CELL = 16;
+  const PAD = { top: 92, right: 8, bottom: 8, left: 96 };
+  // 上端・左端は外から順に「軸見出し / 地方名 / 県名」の3段に切る。
+  const TITLE_AT = 18;
+  const REGION_AT = 46;
+  const WIDTH = PAD.left + CELL * N + PAD.right;
+  const HEIGHT = PAD.top + CELL * N + PAD.bottom;
+
+  const canvas = document.getElementById("heatmap");
+  const ctx = canvas.getContext("2d");
+  const tooltip = document.getElementById("tooltip");
+
+  // ---- 尺度 ----------------------------------------------------------------
+  // 年をまたいで比較できるよう、色の定義域は全年度で固定する。
+  let maxCount = 0;
+  let maxShare = 0;
+  for (let y = 0; y < YEARS.length; y += 1) {
+    for (let i = 0; i < N; i += 1) {
+      const outbound = OD_DATA.outbound[y][i];
+      for (let j = 0; j < N; j += 1) {
+        const value = OD_DATA.matrix[y][i][j];
+        if (value > maxCount) maxCount = value;
+        if (i !== j && outbound > 0) {
+          const share = value / outbound;
+          if (share > maxShare) maxShare = share;
+        }
+      }
+    }
+  }
+
+  const EMPTY = -1;     // 値ゼロ
+  const DIAGONAL = -2;  // 構成比モードの対角（県内進学は分母に含めない）
+
+  // 実数は桁の開きが大きい（数人〜5万人超）。対数だと数十人のセルまで濃く出て
+  // 全体が青一色に潰れるため、小さい値を沈めるべき乗スケールを使う。
+  const COUNT_EXPONENT = 0.35;
+  const countPosition = (value) => Math.pow(value / maxCount, COUNT_EXPONENT);
+
+  // 正規化済みの色位置を全年度・両モードぶん先に作る。描画をループから外すため。
+  const scaled = { count: [], share: [] };
+  for (let y = 0; y < YEARS.length; y += 1) {
+    const count = new Float32Array(N * N);
+    const share = new Float32Array(N * N);
+    for (let i = 0; i < N; i += 1) {
+      const outbound = OD_DATA.outbound[y][i];
+      for (let j = 0; j < N; j += 1) {
+        const value = OD_DATA.matrix[y][i][j];
+        const at = i * N + j;
+        count[at] = value === 0 ? EMPTY : countPosition(value);
+        if (i === j) share[at] = DIAGONAL;
+        else if (value === 0 || outbound === 0) share[at] = EMPTY;
+        else share[at] = Math.sqrt(value / outbound / maxShare);
+      }
+    }
+    scaled.count.push(count);
+    scaled.share.push(share);
+  }
+
+  const regionEdges = [];
+  {
+    let at = 0;
+    for (const region of OD_DATA.regions) {
+      regionEdges.push({ name: region.name, start: at, end: at + region.size });
+      at += region.size;
+    }
+  }
+
+  // ---- 状態 ----------------------------------------------------------------
+  const state = {
+    mode: "count",
+    t: 0,               // 0 .. YEARS.length - 1（小数は年度間の補間）
+    playing: false,
+    hover: null,        // {row, col}
+    pinned: null,
+  };
+
+  function channels(hex) {
+    const value = parseInt(hex.slice(1), 16);
+    return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+  }
+
+  function blendHex(a, b, t) {
+    const ca = channels(a);
+    const cb = channels(b);
+    const hex = ca
+      .map((value, index) => Math.round(value + (cb[index] - value) * t)
+        .toString(16).padStart(2, "0"))
+      .join("");
+    return `#${hex}`;
+  }
+
+  // 暗色モードは順序を反転する。ただし反転しただけでは最小値が濃紺のまま光り、
+  // 「ほぼゼロ」が背景と別物に見えて盤面全体が埋まる。明色側で最も薄い段が紙に
+  // 溶けるのと同じ状態を作るため、最下段を背景色そのものに置き、そこから立ち上げる。
+  function darkRamp() {
+    const reversed = RAMP.slice().reverse();
+    const foot = [1, 0.82, 0.6, 0.32].map((t) => blendHex(reversed[0], DARK_SURFACE, t));
+    return [...foot, ...reversed];
+  }
+
+  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function isDark() {
+    const chosen = document.documentElement.dataset.theme;
+    if (chosen === "dark") return true;
+    if (chosen === "light") return false;
+    return darkQuery.matches;
+  }
+
+  let theme = readTheme();
+
+  function readTheme() {
+    const style = getComputedStyle(document.documentElement);
+    const get = (name) => style.getPropertyValue(name).trim();
+    const dark = isDark();
+    return {
+      dark,
+      ramp: dark ? darkRamp() : RAMP,
+      surface: get("--surface-1"),
+      text: get("--text-primary"),
+      secondary: get("--text-secondary"),
+      muted: get("--muted"),
+      grid: get("--gridline"),
+      axis: get("--axis"),
+      diagonal: get("--diagonal"),
+      accent: get("--accent"),
+    };
+  }
+
+  function rampColor(position) {
+    const clamped = Math.max(0, Math.min(1, position));
+    const scaledPosition = clamped * (theme.ramp.length - 1);
+    const low = Math.floor(scaledPosition);
+    const high = Math.min(theme.ramp.length - 1, low + 1);
+    return blendHex(theme.ramp[low], theme.ramp[high], scaledPosition - low);
+  }
+
+  // ---- 描画 ----------------------------------------------------------------
+  function resize() {
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = WIDTH * ratio;
+    canvas.height = HEIGHT * ratio;
+    canvas.style.width = `${WIDTH}px`;
+    canvas.style.height = `${HEIGHT}px`;
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    draw();
+  }
+
+  function frameValues() {
+    const frames = scaled[state.mode];
+    const low = Math.floor(state.t);
+    const high = Math.min(frames.length - 1, low + 1);
+    return { low: frames[low], high: frames[high], f: state.t - low };
+  }
+
+  // 補間中に片方だけ空セルの場合、色は「空 = 0」として扱い連続に見せる。
+  function blend(low, high, f, at) {
+    const a = low[at];
+    const b = high[at];
+    if (a === DIAGONAL || b === DIAGONAL) return DIAGONAL;
+    if (a === EMPTY && b === EMPTY) return EMPTY;
+    const va = a === EMPTY ? 0 : a;
+    const vb = b === EMPTY ? 0 : b;
+    return va + (vb - va) * f;
+  }
+
+  function draw() {
+    const { low, high, f } = frameValues();
+    const focus = state.pinned || state.hover;
+
+    ctx.fillStyle = theme.surface;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    for (let i = 0; i < N; i += 1) {
+      const y = PAD.top + i * CELL;
+      for (let j = 0; j < N; j += 1) {
+        const value = blend(low, high, f, i * N + j);
+        if (value === EMPTY) continue;
+        ctx.fillStyle = value === DIAGONAL ? theme.diagonal : rampColor(value);
+        // 隣接セルの境目を 1px 空け、塊が一枚のベタ面に潰れないようにする。
+        ctx.fillRect(PAD.left + j * CELL, y, CELL - 1, CELL - 1);
+      }
+    }
+
+    // 地方ブロックの区切り
+    ctx.strokeStyle = theme.axis;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (const region of regionEdges) {
+      if (region.start === 0) continue;
+      const offset = Math.round(region.start * CELL) - 0.5;
+      ctx.moveTo(PAD.left + offset, PAD.top);
+      ctx.lineTo(PAD.left + offset, PAD.top + N * CELL);
+      ctx.moveTo(PAD.left, PAD.top + offset);
+      ctx.lineTo(PAD.left + N * CELL, PAD.top + offset);
+    }
+    ctx.stroke();
+
+    drawLabels(focus);
+    drawFocus(focus);
+  }
+
+  function drawLabels(focus) {
+    ctx.font = "10px system-ui, -apple-system, 'Hiragino Sans', sans-serif";
+    ctx.textBaseline = "middle";
+
+    // 行（出身高校の所在地）
+    ctx.textAlign = "right";
+    for (let i = 0; i < N; i += 1) {
+      ctx.fillStyle = focus && focus.row === i ? theme.text : theme.muted;
+      ctx.fillText(OD_DATA.shortNames[i], PAD.left - 5, PAD.top + i * CELL + CELL / 2 - 0.5);
+    }
+
+    // 列（大学の所在地）
+    ctx.textAlign = "left";
+    for (let j = 0; j < N; j += 1) {
+      ctx.save();
+      ctx.translate(PAD.left + j * CELL + CELL / 2 - 0.5, PAD.top - 5);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = focus && focus.col === j ? theme.text : theme.muted;
+      ctx.fillText(OD_DATA.shortNames[j], 0, 0);
+      ctx.restore();
+    }
+
+    // 地方名の帯
+    ctx.fillStyle = theme.secondary;
+    ctx.font = "10px system-ui, -apple-system, 'Hiragino Sans', sans-serif";
+    ctx.textAlign = "center";
+    for (const region of regionEdges) {
+      const center = (region.start + region.end) / 2 * CELL;
+      ctx.fillText(region.name, PAD.left + center, REGION_AT);
+      ctx.save();
+      ctx.translate(REGION_AT, PAD.top + center);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(region.name, 0, 0);
+      ctx.restore();
+    }
+
+    // 軸の見出し。列・行それぞれの中央に置く。
+    ctx.textAlign = "center";
+    ctx.fillStyle = theme.text;
+    const middle = N * CELL / 2;
+    ctx.fillText("大学の所在地", PAD.left + middle, TITLE_AT);
+    ctx.save();
+    ctx.translate(TITLE_AT, PAD.top + middle);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText("出身高校の所在地", 0, 0);
+    ctx.restore();
+  }
+
+  function drawFocus(focus) {
+    if (!focus) return;
+    const x = PAD.left + focus.col * CELL;
+    const y = PAD.top + focus.row * CELL;
+
+    ctx.save();
+    ctx.fillStyle = theme.dark ? "rgba(255,255,255,0.10)" : "rgba(11,11,11,0.07)";
+    ctx.fillRect(PAD.left, y, N * CELL, CELL - 1);
+    ctx.fillRect(x, PAD.top, CELL - 1, N * CELL);
+    ctx.restore();
+
+    ctx.strokeStyle = theme.text;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - 1, y - 1, CELL + 1, CELL + 1);
+  }
+
+  // ---- 数値の読み出し ------------------------------------------------------
+  // 補間はあくまで色の話。表示する数値は必ず最寄りの年度の実数を使う。
+  function nearestYearIndex() {
+    return Math.min(YEARS.length - 1, Math.max(0, Math.round(state.t)));
+  }
+
+  const numberFormat = new Intl.NumberFormat("ja-JP");
+  const percentFormat = new Intl.NumberFormat("ja-JP", {
+    style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1,
+  });
+
+  function showTooltip(cell, clientX, clientY) {
+    const y = nearestYearIndex();
+    const { row, col } = cell;
+    const value = OD_DATA.matrix[y][row][col];
+    const outbound = OD_DATA.outbound[y][row];
+    const inbound = OD_DATA.inbound[y][col];
+    const origin = OD_DATA.prefectures[row];
+    const destination = OD_DATA.prefectures[col];
+    const first = OD_DATA.matrix[0][row][col];
+    const delta = value - first;
+    const sign = delta > 0 ? "+" : "";
+
+    const lines = [];
+    if (row === col) {
+      lines.push(`<strong>${origin} 県内進学</strong>`);
+      lines.push(`<span class="num">${numberFormat.format(value)}</span> 人`);
+      const total = value + outbound;
+      lines.push(`<span class="sub">県内進学率 ${percentFormat.format(value / total)}</span>`);
+    } else {
+      lines.push(`<strong>${origin} → ${destination}</strong>`);
+      lines.push(`<span class="num">${numberFormat.format(value)}</span> 人`);
+      lines.push(`<span class="sub">${origin}の県外進学者の `
+        + `${outbound ? percentFormat.format(value / outbound) : "–"}</span>`);
+      lines.push(`<span class="sub">${destination}への流入の `
+        + `${inbound ? percentFormat.format(value / inbound) : "–"}</span>`);
+    }
+    lines.push(`<span class="sub">${YEARS[y]}年度 / 2015年度比 `
+      + `<span class="num">${sign}${numberFormat.format(delta)}</span></span>`);
+
+    tooltip.innerHTML = lines.join("<br>");
+    tooltip.style.opacity = "1";
+
+    const bounds = canvas.getBoundingClientRect();
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    let left = clientX - bounds.left + 14;
+    let top = clientY - bounds.top + 14;
+    if (left + width > bounds.width) left = clientX - bounds.left - width - 14;
+    if (top + height > bounds.height) top = clientY - bounds.top - height - 14;
+    tooltip.style.left = `${Math.max(0, left)}px`;
+    tooltip.style.top = `${Math.max(0, top)}px`;
+  }
+
+  function hideTooltip() {
+    tooltip.style.opacity = "0";
+  }
+
+  function cellAt(event) {
+    const bounds = canvas.getBoundingClientRect();
+    const scale = WIDTH / bounds.width;
+    const x = (event.clientX - bounds.left) * scale - PAD.left;
+    const y = (event.clientY - bounds.top) * scale - PAD.top;
+    const col = Math.floor(x / CELL);
+    const row = Math.floor(y / CELL);
+    if (row < 0 || col < 0 || row >= N || col >= N) return null;
+    return { row, col };
+  }
+
+  canvas.addEventListener("mousemove", (event) => {
+    const cell = cellAt(event);
+    state.hover = cell;
+    if (cell) showTooltip(state.pinned || cell, event.clientX, event.clientY);
+    else if (!state.pinned) hideTooltip();
+    draw();
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    state.hover = null;
+    if (!state.pinned) hideTooltip();
+    draw();
+  });
+
+  canvas.addEventListener("click", (event) => {
+    const cell = cellAt(event);
+    if (!cell) return;
+    const same = state.pinned && state.pinned.row === cell.row && state.pinned.col === cell.col;
+    state.pinned = same ? null : cell;
+    if (state.pinned) showTooltip(state.pinned, event.clientX, event.clientY);
+    draw();
+  });
+
+  // ---- 凡例 ----------------------------------------------------------------
+  const legendBar = document.getElementById("legend-bar");
+  const legendTicks = document.getElementById("legend-ticks");
+  const legendTitle = document.getElementById("legend-title");
+  const diagonalNote = document.getElementById("diagonal-note");
+
+  function renderLegend() {
+    const stops = theme.ramp.map((hex, index) =>
+      `${hex} ${(index / (theme.ramp.length - 1) * 100).toFixed(1)}%`);
+    legendBar.style.background = `linear-gradient(to right, ${stops.join(", ")})`;
+
+    const ticks = [];
+    if (state.mode === "count") {
+      legendTitle.textContent = "入学者数（非線形）";
+      diagonalNote.hidden = true;
+      for (const value of [100, 1000, 10000, 50000]) {
+        if (value > maxCount) break;
+        ticks.push({ at: countPosition(value), text: numberFormat.format(value) });
+      }
+    } else {
+      legendTitle.textContent = "出身県の県外進学者に占める割合（非線形）";
+      diagonalNote.hidden = false;
+      for (const value of [0.01, 0.1, 0.2, 0.4]) {
+        if (value > maxShare) break;
+        ticks.push({ at: Math.sqrt(value / maxShare), text: `${(value * 100).toFixed(0)}%` });
+      }
+    }
+    legendTicks.innerHTML = ticks
+      .map((tick) => `<span style="left:${(tick.at * 100).toFixed(1)}%">${tick.text}</span>`)
+      .join("");
+  }
+
+  // ---- 要約とテーブル ------------------------------------------------------
+  const statMovers = document.getElementById("stat-movers");
+  const statRate = document.getElementById("stat-rate");
+  const statTopIn = document.getElementById("stat-top-in");
+  const statTopOut = document.getElementById("stat-top-out");
+  const tableBody = document.getElementById("table-body");
+  let renderedYear = -1;
+
+  function renderYearDetails() {
+    const y = nearestYearIndex();
+    if (y === renderedYear) return;
+    renderedYear = y;
+
+    let movers = 0;
+    let entrants = 0;
+    let topIn = 0;
+    let topOut = 0;
+    for (let i = 0; i < N; i += 1) {
+      movers += OD_DATA.outbound[y][i];
+      entrants += OD_DATA.outbound[y][i] + OD_DATA.local[y][i];
+      if (OD_DATA.netInflow[y][i] > OD_DATA.netInflow[y][topIn]) topIn = i;
+      if (OD_DATA.netInflow[y][i] < OD_DATA.netInflow[y][topOut]) topOut = i;
+    }
+    statMovers.textContent = `${numberFormat.format(movers)} 人`;
+    statRate.textContent = percentFormat.format(movers / entrants);
+    statTopIn.innerHTML = `${OD_DATA.shortNames[topIn]} `
+      + `<small>+${numberFormat.format(OD_DATA.netInflow[y][topIn])}</small>`;
+    statTopOut.innerHTML = `${OD_DATA.shortNames[topOut]} `
+      + `<small>${numberFormat.format(OD_DATA.netInflow[y][topOut])}</small>`;
+
+    const flows = [];
+    for (let i = 0; i < N; i += 1) {
+      for (let j = 0; j < N; j += 1) {
+        if (i === j) continue;
+        const value = OD_DATA.matrix[y][i][j];
+        if (value > 0) flows.push({ i, j, value, share: value / OD_DATA.outbound[y][i] });
+      }
+    }
+    flows.sort((a, b) => b.value - a.value);
+    tableBody.innerHTML = flows.slice(0, 40).map((flow) => `<tr>
+        <td>${OD_DATA.prefectures[flow.i]}</td>
+        <td>${OD_DATA.prefectures[flow.j]}</td>
+        <td class="num">${numberFormat.format(flow.value)}</td>
+        <td class="num">${percentFormat.format(flow.share)}</td>
+      </tr>`).join("");
+  }
+
+  // ---- 時間軸 --------------------------------------------------------------
+  const slider = document.getElementById("slider");
+  const yearLabel = document.getElementById("year-label");
+  const playButton = document.getElementById("play");
+  const SPAN = YEARS.length - 1;
+  const SEGMENT_MS = 1100;   // 1年ぶんの送り時間
+
+  function updateYearLabel() {
+    const nearest = nearestYearIndex();
+    const between = Math.abs(state.t - nearest) > 0.02;
+    const caption = between
+      ? `${YEARS[Math.floor(state.t)]} → ${YEARS[Math.ceil(state.t)]}`
+      : "年度";
+    yearLabel.innerHTML = `${YEARS[nearest]}<small>${caption}</small>`;
+    slider.setAttribute("aria-valuetext", `${YEARS[nearest]}年度`);
+  }
+
+  function setT(value, { fromSlider = false } = {}) {
+    state.t = Math.max(0, Math.min(SPAN, value));
+    if (!fromSlider) slider.value = String(Math.round(state.t / SPAN * 1000));
+    updateYearLabel();
+    renderYearDetails();
+    if (state.pinned) {
+      // 固定中のセルは年をまたいでも数値を追随させる。canvas は CSS で縮む場合がある。
+      const bounds = canvas.getBoundingClientRect();
+      const scale = bounds.width / WIDTH;
+      showTooltip(state.pinned,
+        bounds.left + (PAD.left + state.pinned.col * CELL + CELL) * scale,
+        bounds.top + (PAD.top + state.pinned.row * CELL + CELL) * scale);
+    }
+    draw();
+  }
+
+  slider.addEventListener("input", () => {
+    stop();
+    setT(Number(slider.value) / 1000 * SPAN, { fromSlider: true });
+  });
+
+  // 各年度で一拍おいて見えるよう、区間ごとに ease-in-out をかける。
+  function ease(x) {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+
+  let rafId = 0;
+  let lastStamp = 0;
+  let rawT = 0;
+
+  function tick(stamp) {
+    if (!state.playing) return;
+    const delta = lastStamp ? (stamp - lastStamp) : 0;
+    lastStamp = stamp;
+    rawT += delta / SEGMENT_MS;
+    if (rawT >= SPAN) rawT = 0;
+    const segment = Math.floor(rawT);
+    setT(segment + ease(rawT - segment));
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function play() {
+    state.playing = true;
+    playButton.textContent = "❙❙ 停止";
+    rawT = state.t >= SPAN - 0.001 ? 0 : state.t;
+    lastStamp = 0;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function stop() {
+    if (!state.playing) return;
+    state.playing = false;
+    playButton.textContent = "▶ 再生";
+    cancelAnimationFrame(rafId);
+  }
+
+  playButton.addEventListener("click", () => {
+    if (state.playing) stop();
+    else play();
+  });
+
+  // ---- モード切替 ----------------------------------------------------------
+  const modeButtons = {
+    count: document.getElementById("mode-count"),
+    share: document.getElementById("mode-share"),
+  };
+
+  for (const [mode, button] of Object.entries(modeButtons)) {
+    button.addEventListener("click", () => {
+      state.mode = mode;
+      for (const [key, other] of Object.entries(modeButtons)) {
+        other.setAttribute("aria-pressed", key === mode ? "true" : "false");
+      }
+      renderLegend();
+      draw();
+    });
+  }
+
+  // ---- 配色 ----------------------------------------------------------------
+  const themeButton = document.getElementById("theme");
+
+  function applyTheme() {
+    theme = readTheme();
+    themeButton.textContent = `配色: ${theme.dark ? "暗" : "明"}`;
+    renderLegend();
+    draw();
+  }
+
+  themeButton.addEventListener("click", () => {
+    document.documentElement.dataset.theme = isDark() ? "light" : "dark";
+    applyTheme();
+  });
+
+  darkQuery.addEventListener("change", applyTheme);
+
+  window.addEventListener("resize", resize);
+
+  applyTheme();
+  resize();
+  setT(0);
+})();
+</script>
+</body>
+</html>
