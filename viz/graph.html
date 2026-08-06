@@ -4,135 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大学進学の都道府県間フロー 2015-2025</title>
+<link rel="stylesheet" href="shared/base.css">
 <style>
-  :root {
-    color-scheme: light;
-    --surface-1: #fcfcfb;
-    --plane: #f9f9f7;
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --muted: #898781;
-    --gridline: #e1e0d9;
-    --axis: #c3c2b7;
-    --border: rgba(11, 11, 11, 0.10);
-    --accent: #2a78d6;
-    --pole-in: #2a78d6;
-    --pole-out: #e34948;
-    --pole-mid: #f0efec;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --surface-1: #1a1a19;
-      --plane: #0d0d0d;
-      --text-primary: #ffffff;
-      --text-secondary: #c3c2b7;
-      --muted: #898781;
-      --gridline: #2c2c2a;
-      --axis: #383835;
-      --border: rgba(255, 255, 255, 0.10);
-      --accent: #3987e5;
-      --pole-in: #3987e5;
-      --pole-out: #e66767;
-      --pole-mid: #383835;
-    }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --surface-1: #1a1a19;
-    --plane: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --muted: #898781;
-    --gridline: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --accent: #3987e5;
-    --pole-in: #3987e5;
-    --pole-out: #e66767;
-    --pole-mid: #383835;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    padding: 24px 20px 48px;
-    background: var(--plane);
-    color: var(--text-primary);
-    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .wrap { max-width: 980px; margin: 0 auto; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 78ch; }
-  .nav { margin: 0 0 20px; font-size: 13px; }
-  .nav a { color: var(--accent); }
-
-  .panel {
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-  }
-
-  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
-  .controls + .controls { margin-top: 10px; }
-
-  .segmented { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
-  .segmented button {
-    appearance: none; border: 0; background: transparent; color: var(--text-secondary);
-    font: inherit; font-size: 13px; padding: 6px 12px; cursor: pointer;
-  }
-  .segmented button + button { border-left: 1px solid var(--axis); }
-  .segmented button[aria-pressed="true"] { background: var(--accent); color: #fff; }
-
-  .button {
-    appearance: none; border: 1px solid var(--axis); border-radius: 8px; background: transparent;
-    color: var(--text-primary); font: inherit; font-size: 13px; padding: 6px 14px; cursor: pointer;
-  }
-  .button[disabled] { opacity: 0.45; cursor: default; }
-  /* 配色は図の操作ではなくページの設定なので、行の右端へ離して置く */
-  .push-right { margin-left: auto; }
-
-  .field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
-  .field input[type="range"] { accent-color: var(--accent); width: 118px; }
-  .field .value { font-variant-numeric: tabular-nums; color: var(--text-primary); min-width: 5.5em; }
+  canvas { cursor: grab; touch-action: pan-y; }
+  canvas.grabbing { cursor: grabbing; }
   .field #zoom-value { min-width: 3.4em; color: var(--muted); }
 
-  .timeline { flex: 1 1 240px; display: flex; align-items: center; gap: 12px; min-width: 240px; }
-  .timeline input[type="range"] { flex: 1; accent-color: var(--accent); }
-  .year { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 4.2em; text-align: right; }
-  .year small { display: block; font-size: 11px; color: var(--muted); line-height: 1.2; }
-
-  .hints {
-    display: flex; flex-wrap: wrap; gap: 2px 18px;
-    margin: 14px 0 0; padding: 10px 0 0; border-top: 1px solid var(--gridline);
-    font-size: 12px; color: var(--muted);
-  }
-  .hints span { white-space: nowrap; }
-
-  .chart { position: relative; margin-top: 10px; }
-  canvas { display: block; max-width: 100%; cursor: grab; touch-action: pan-y; }
-  canvas.grabbing { cursor: grabbing; }
-
-  .tooltip {
-    position: absolute; pointer-events: none; background: var(--surface-1);
-    border: 1px solid var(--border); border-radius: 8px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-    padding: 8px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap;
-    opacity: 0; transition: opacity 90ms; z-index: 2; max-width: 280px;
-  }
-  .tooltip .num { font-variant-numeric: tabular-nums; }
-  .tooltip .sub { color: var(--text-secondary); }
-  .tooltip hr { border: 0; border-top: 1px solid var(--gridline); margin: 5px 0; }
-
-  .legend {
-    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
-    margin-top: 14px; font-size: 12px; color: var(--text-secondary);
-  }
   .legend .scale { display: inline-block; }
   .legend .bar {
     display: block;
@@ -140,17 +17,7 @@
     background: linear-gradient(to right, var(--pole-out), var(--pole-mid), var(--pole-in));
   }
   .legend .ends { display: flex; justify-content: space-between; width: 150px; font-size: 10px; color: var(--muted); }
-  .legend .key { display: inline-flex; align-items: center; gap: 5px; }
-  .legend .key[hidden] { display: none; }
   .legend .line { display: inline-block; width: 22px; height: 3px; border-radius: 2px; }
-
-  details { margin-top: 18px; }
-  summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
-  table { border-collapse: collapse; margin-top: 10px; font-size: 12px; width: 100%; }
-  th, td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--gridline); }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-
-  footer { color: var(--muted); font-size: 12px; margin-top: 22px; }
 </style>
 </head>
 <body>
@@ -160,11 +27,8 @@
     ノードが都道府県、矢印が「出身高校の所在地 → 入学した大学の所在地」の流れ。
     矢印は出発する県の側が太く、向かう先へ細くなる。太さが人数、ノードの色が純流入（流入 − 流出）を表す。
   </p>
-  <p class="nav">
-    <a href="index.html">47×47のヒートマップで見る</a>
-    ・
-    <a href="schools.html">高校と大学の設置数と突き合わせる</a>
-  </p>
+
+  <div id="viz-chrome"></div>
 
   <div class="panel">
     <div class="controls">
@@ -189,16 +53,6 @@
         <span class="value" id="threshold-value">500人以上</span>
       </label>
       <button type="button" class="button" id="clear" disabled>選択を解除</button>
-      <button type="button" class="button push-right" id="theme">配色: 明</button>
-    </div>
-
-    <div class="controls">
-      <button type="button" class="button" id="play">▶ 再生</button>
-      <div class="timeline">
-        <input type="range" id="slider" min="0" max="1000" value="0" step="1"
-               aria-label="年度" aria-valuetext="2015年度">
-        <div class="year" id="year-label">2015<small>年度</small></div>
-      </div>
     </div>
 
     <p class="hints">
@@ -259,12 +113,22 @@
 </div>
 
 <script src="data.js"></script>
+<script src="shared/theme.js"></script>
+<script src="shared/format.js"></script>
+<script src="shared/state.js"></script>
+<script src="shared/chrome.js"></script>
 <script>
 (() => {
   "use strict";
 
+  if (VIZ.state.redirectIfNeeded("graph")) return;
+
+  // アドレス欄を書き換えられたときと戻る操作。状態を継ぎ足すより読み直すほうが確実。
+  VIZ.state.onChange(() => window.location.reload());
+
   const N = OD_DATA.prefectures.length;
   const YEARS = OD_DATA.years;
+  const format = VIZ.format;
 
   // 県庁所在地のおおよその緯度・経度。沖縄は九州南西の海域へ寄せた表示位置を使う。
   const COORDS = [
@@ -423,7 +287,6 @@
     }
   }
 
-  const MIN_THRESHOLD = 200;
   const FOCUS_FLOOR = 30;   // 県を選んだときに描く最小人数
 
   // どこかの年度で最小しきい値に届く組だけを候補にする。毎フレーム 2,000 組を走らない。
@@ -449,96 +312,48 @@
   const netPosition = (net) => Math.sign(net) * Math.pow(Math.abs(net) / maxNet, 0.4);
 
   // ---- 状態 ----------------------------------------------------------------
+  const saved = VIZ.state.get();
   const state = {
-    preset: "all",   // 押されている表示範囲ボタン。手で動かしたら null
-    size: "send",
-    threshold: 500,
-    t: 0,
-    playing: false,
-    focus: null,
+    preset: saved.area,   // 押されている表示範囲ボタン。手で動かしたら null
+    size: saved.size,
+    threshold: saved.threshold,
+    focus: saved.pref === null ? null : format.toIndex(saved.pref),
     hover: null,
   };
 
-  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-  function isDark() {
-    const chosen = document.documentElement.dataset.theme;
-    if (chosen === "dark") return true;
-    if (chosen === "light") return false;
-    return darkQuery.matches;
-  }
-
-  let theme = readTheme();
-
-  function readTheme() {
-    const style = getComputedStyle(document.documentElement);
-    const get = (name) => style.getPropertyValue(name).trim();
-    return {
-      dark: isDark(),
-      surface: get("--surface-1"),
-      text: get("--text-primary"),
-      secondary: get("--text-secondary"),
-      muted: get("--muted"),
-      axis: get("--axis"),
-      poleIn: get("--pole-in"),
-      poleOut: get("--pole-out"),
-      poleMid: get("--pole-mid"),
-    };
-  }
-
-  function channels(hex) {
-    const value = parseInt(hex.slice(1), 16);
-    return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
-  }
-
-  function blendHex(a, b, t) {
-    const ca = channels(a);
-    const cb = channels(b);
-    return `#${ca.map((v, k) => Math.round(v + (cb[k] - v) * t).toString(16).padStart(2, "0")).join("")}`;
-  }
-
-  function withAlpha(hex, alpha) {
-    const [r, g, b] = channels(hex);
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
+  let theme = VIZ.theme.read();
 
   function netColor(net) {
     const position = netPosition(net);
     return position >= 0
-      ? blendHex(theme.poleMid, theme.poleIn, position)
-      : blendHex(theme.poleMid, theme.poleOut, -position);
+      ? VIZ.theme.blend(theme.poleMid, theme.poleIn, position)
+      : VIZ.theme.blend(theme.poleMid, theme.poleOut, -position);
   }
 
   // ---- 年度の補間 ----------------------------------------------------------
-  function frame() {
-    const low = Math.floor(state.t);
-    const high = Math.min(YEARS.length - 1, low + 1);
-    return { low, high, f: state.t - low };
-  }
-
   function movesAt(i, j) {
-    const { low, high, f } = frame();
+    const { low, high, f } = VIZ.chrome.frame();
     const a = OD_DATA.matrix[low][i][j];
     const b = OD_DATA.matrix[high][i][j];
     return a + (b - a) * f;
   }
 
   function netAt(i) {
-    const { low, high, f } = frame();
+    const { low, high, f } = VIZ.chrome.frame();
     const a = OD_DATA.netInflow[low][i];
     const b = OD_DATA.netInflow[high][i];
     return a + (b - a) * f;
   }
 
   function entrantsAt(i) {
-    const { low, high, f } = frame();
+    const { low, high, f } = VIZ.chrome.frame();
     const a = OD_DATA.local[low][i] + OD_DATA.outbound[low][i];
     const b = OD_DATA.local[high][i] + OD_DATA.outbound[high][i];
     return a + (b - a) * f;
   }
 
   function capacityAt(i) {
-    const { low, high, f } = frame();
+    const { low, high, f } = VIZ.chrome.frame();
     const a = OD_DATA.capacity.total[low][i];
     const b = OD_DATA.capacity.total[high][i];
     return a + (b - a) * f;
@@ -659,7 +474,7 @@
       right.push({ x: point.x - nx, y: point.y - ny });
     }
 
-    ctx.fillStyle = withAlpha(color, alpha);
+    ctx.fillStyle = VIZ.theme.withAlpha(color, alpha);
     ctx.beginPath();
     ctx.moveTo(left[0].x, left[0].y);
     for (const point of left.slice(1)) ctx.lineTo(point.x, point.y);
@@ -708,7 +523,7 @@
     const placed = [];
 
     for (const index of priority) {
-      const name = OD_DATA.shortNames[index];
+      const name = format.short(index);
       const point = screen[index];
       if (point.x < -60 || point.x > WIDTH + 60 || point.y < -20 || point.y > HEIGHT + 20) continue;
       const radius = nodeRadius(sizeAt(index)) * mark + 4;
@@ -797,15 +612,6 @@
     return best;
   }
 
-  const numberFormat = new Intl.NumberFormat("ja-JP");
-  const percentFormat = new Intl.NumberFormat("ja-JP", {
-    style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1,
-  });
-
-  function nearestYearIndex() {
-    return Math.min(YEARS.length - 1, Math.max(0, Math.round(state.t)));
-  }
-
   function topFlows(year, index, direction) {
     const flows = [];
     for (let other = 0; other < N; other += 1) {
@@ -820,31 +626,30 @@
   }
 
   function showTooltip(index, clientX, clientY) {
-    const year = nearestYearIndex();
+    const year = VIZ.chrome.yearIndex();
     const local = OD_DATA.local[year][index];
     const outbound = OD_DATA.outbound[year][index];
     const inbound = OD_DATA.inbound[year][index];
     const net = OD_DATA.netInflow[year][index];
-    const sign = net > 0 ? "+" : "";
 
     const list = (flows, arrow) => flows
-      .map((flow) => `${arrow} ${OD_DATA.shortNames[flow.other]} `
-        + `<span class="num">${numberFormat.format(flow.movers)}</span>`)
+      .map((flow) => `${arrow} ${format.short(flow.other)} `
+        + `<span class="num">${format.count(flow.movers)}</span>`)
       .join("<br>");
 
     const capacity = OD_DATA.capacity;
     tooltip.innerHTML = [
-      `<strong>${OD_DATA.prefectures[index]}</strong>`,
+      `<strong>${format.name(index)}</strong>`,
       `<span class="sub">${YEARS[year]}年度 / 県内進学 `
-        + `${percentFormat.format(local / (local + outbound))}</span>`,
-      `流出 <span class="num">${numberFormat.format(outbound)}</span> / `
-        + `流入 <span class="num">${numberFormat.format(inbound)}</span>`,
-      `純流入 <span class="num">${sign}${numberFormat.format(net)}</span>`,
+        + `${format.share(local / (local + outbound))}</span>`,
+      `流出 <span class="num">${format.count(outbound)}</span> / `
+        + `流入 <span class="num">${format.count(inbound)}</span>`,
+      `純流入 <span class="num">${format.signed(net)}</span>`,
       "<hr>",
-      `県内の大学の入学者 <span class="num">${numberFormat.format(capacity.total[year][index])}</span>`,
-      `<span class="sub">国立 ${numberFormat.format(capacity.national[year][index])}`
-        + ` / 公立 ${numberFormat.format(capacity.public[year][index])}`
-        + ` / 私立 ${numberFormat.format(capacity.private[year][index])}</span>`,
+      `県内の大学の入学者 <span class="num">${format.count(capacity.total[year][index])}</span>`,
+      `<span class="sub">国立 ${format.count(capacity.national[year][index])}`
+        + ` / 公立 ${format.count(capacity.public[year][index])}`
+        + ` / 私立 ${format.count(capacity.private[year][index])}</span>`,
       "<hr>",
       `<span class="sub">主な流出先</span><br>${list(topFlows(year, index, "out"), "→")}`,
       `<span class="sub">主な流入元</span><br>${list(topFlows(year, index, "in"), "←")}`,
@@ -882,8 +687,7 @@
     // 上限・下限に張り付いていて動かせないときは、ページのスクロールに譲る。
     if (!zoomAt(factor, point.x, point.y)) return;
     event.preventDefault();
-    state.preset = null;
-    syncView();
+    clearPreset();
     hoverAt(event);
     draw();
   }, { passive: false });
@@ -909,10 +713,7 @@
     view.tx = drag.tx + dx * factor;
     view.ty = drag.ty + dy * factor;
     clampView();
-    if (drag.moved >= DRAG_SLOP) {
-      state.preset = null;
-      syncView();
-    }
+    if (drag.moved >= DRAG_SLOP) clearPreset();
     draw();
   });
 
@@ -958,6 +759,7 @@
     keys.plain.hidden = index !== null;
     keys.out.hidden = index === null;
     keys.in.hidden = index === null;
+    VIZ.state.patch({ pref: index === null ? null : format.toJis(index) });
     draw();
   }
 
@@ -985,7 +787,16 @@
     }
   }
 
-  function setPreset(name) {
+  // 手で拡大・移動したら、どのプリセットでもない状態になる。
+  // ズーム位置そのものはハッシュに載せない。共有時に意図しない拡大を強制しないため。
+  function clearPreset() {
+    if (state.preset === null) return;
+    state.preset = null;
+    VIZ.state.patch({ area: "all" });
+    syncView();
+  }
+
+  function setPreset(name, { silent = false } = {}) {
     state.preset = name;
     if (name === "all") {
       view.scale = 1;
@@ -994,6 +805,7 @@
     } else {
       fitTo(presetIndices[name]);
     }
+    if (!silent) VIZ.state.patch({ area: name });
     syncView();
     draw();
   }
@@ -1007,29 +819,39 @@
     take: document.getElementById("size-take"),
   };
 
-  for (const [size, button] of Object.entries(sizeButtons)) {
-    button.addEventListener("click", () => {
-      state.size = size;
-      for (const [key, other] of Object.entries(sizeButtons)) {
-        other.setAttribute("aria-pressed", key === size ? "true" : "false");
-      }
-      draw();
-    });
+  function setSize(size, { silent = false } = {}) {
+    state.size = size;
+    for (const [key, other] of Object.entries(sizeButtons)) {
+      other.setAttribute("aria-pressed", key === size ? "true" : "false");
+    }
+    if (!silent) VIZ.state.patch({ size });
+    draw();
+  }
+
+  for (const size of Object.keys(sizeButtons)) {
+    sizeButtons[size].addEventListener("click", () => setSize(size));
   }
 
   const thresholdInput = document.getElementById("threshold");
   const thresholdValue = document.getElementById("threshold-value");
-  thresholdInput.addEventListener("input", () => {
-    state.threshold = Number(thresholdInput.value);
-    thresholdValue.textContent = `${numberFormat.format(state.threshold)}人以上`;
+
+  function setThreshold(value, { silent = false } = {}) {
+    state.threshold = value;
+    thresholdInput.value = String(value);
+    thresholdValue.textContent = `${format.count(value)}人以上`;
+    if (!silent) VIZ.state.patch({ threshold: value });
     draw();
-  });
+  }
+
+  // つまみを動かしている間は描き直すだけ。手を離したところで URL に書く。
+  thresholdInput.addEventListener("input", () => setThreshold(Number(thresholdInput.value), { silent: true }));
+  thresholdInput.addEventListener("change", () => setThreshold(Number(thresholdInput.value)));
 
   // ---- 表 ------------------------------------------------------------------
   const tableBody = document.getElementById("table-body");
 
   function renderTable(edges) {
-    const year = nearestYearIndex();
+    const year = VIZ.chrome.yearIndex();
     const rows = edges
       .map((edge) => ({
         i: edge.i,
@@ -1040,100 +862,39 @@
       .sort((a, b) => b.movers - a.movers)
       .slice(0, 30);
     tableBody.innerHTML = rows.map((row) => `<tr>
-        <td>${OD_DATA.prefectures[row.i]}</td>
-        <td>${OD_DATA.prefectures[row.j]}</td>
-        <td class="num">${numberFormat.format(row.movers)}</td>
-        <td class="num">${row.outbound ? percentFormat.format(row.movers / row.outbound) : "–"}</td>
+        <td>${format.name(row.i)}</td>
+        <td>${format.name(row.j)}</td>
+        <td class="num">${format.count(row.movers)}</td>
+        <td class="num">${row.outbound ? format.share(row.movers / row.outbound) : "–"}</td>
       </tr>`).join("");
   }
 
-  // ---- 時間軸 --------------------------------------------------------------
-  const slider = document.getElementById("slider");
-  const yearLabel = document.getElementById("year-label");
-  const playButton = document.getElementById("play");
-  const SPAN = YEARS.length - 1;
-  const SEGMENT_MS = 1100;
-
-  function setT(value, { fromSlider = false } = {}) {
-    state.t = Math.max(0, Math.min(SPAN, value));
-    if (!fromSlider) slider.value = String(Math.round(state.t / SPAN * 1000));
-    const nearest = nearestYearIndex();
-    const between = Math.abs(state.t - nearest) > 0.02;
-    yearLabel.innerHTML = `${YEARS[nearest]}<small>`
-      + `${between ? `${YEARS[Math.floor(state.t)]} → ${YEARS[Math.ceil(state.t)]}` : "年度"}</small>`;
-    slider.setAttribute("aria-valuetext", `${YEARS[nearest]}年度`);
-    if (state.hover !== null) {
-      const bounds = canvas.getBoundingClientRect();
-      const factor = bounds.width / WIDTH;
-      const point = screenOf(points[state.hover]);
-      showTooltip(state.hover, bounds.left + point.x * factor, bounds.top + point.y * factor);
-    }
-    draw();
-  }
-
-  slider.addEventListener("input", () => {
-    stop();
-    setT(Number(slider.value) / 1000 * SPAN, { fromSlider: true });
-  });
-
-  function ease(x) {
-    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-  }
-
-  let rafId = 0;
-  let lastStamp = 0;
-  let rawT = 0;
-
-  function tick(stamp) {
-    if (!state.playing) return;
-    const delta = lastStamp ? (stamp - lastStamp) : 0;
-    lastStamp = stamp;
-    rawT += delta / SEGMENT_MS;
-    if (rawT >= SPAN) rawT = 0;
-    const segment = Math.floor(rawT);
-    setT(segment + ease(rawT - segment));
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function play() {
-    state.playing = true;
-    playButton.textContent = "❙❙ 停止";
-    rawT = state.t >= SPAN - 0.001 ? 0 : state.t;
-    lastStamp = 0;
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function stop() {
-    if (!state.playing) return;
-    state.playing = false;
-    playButton.textContent = "▶ 再生";
-    cancelAnimationFrame(rafId);
-  }
-
-  playButton.addEventListener("click", () => (state.playing ? stop() : play()));
-
-  // ---- 配色 ----------------------------------------------------------------
-  const themeButton = document.getElementById("theme");
-
-  function applyTheme() {
-    theme = readTheme();
-    themeButton.textContent = `配色: ${theme.dark ? "暗" : "明"}`;
-    draw();
-  }
-
-  themeButton.addEventListener("click", () => {
-    document.documentElement.dataset.theme = isDark() ? "light" : "dark";
-    applyTheme();
-  });
-
-  darkQuery.addEventListener("change", applyTheme);
+  // ---- 起動 ----------------------------------------------------------------
   window.addEventListener("resize", resize);
 
-  theme = readTheme();
-  themeButton.textContent = `配色: ${theme.dark ? "暗" : "明"}`;
-  syncView();
+  VIZ.chrome.mount({
+    view: "graph",
+    onYear: () => {
+      if (state.hover !== null) {
+        const bounds = canvas.getBoundingClientRect();
+        const factor = bounds.width / WIDTH;
+        const point = screenOf(points[state.hover]);
+        showTooltip(state.hover, bounds.left + point.x * factor, bounds.top + point.y * factor);
+      }
+      draw();
+    },
+    onTheme: () => {
+      theme = VIZ.theme.read();
+      draw();
+    },
+  });
+
+  // URL から復元する。ハッシュに書かれていた値はそのまま書き戻すので silent で当てる。
+  setSize(state.size, { silent: true });
+  setThreshold(state.threshold, { silent: true });
+  setPreset(state.preset, { silent: true });
+  setFocus(state.focus);
   resize();
-  setT(0);
 })();
 </script>
 </body>

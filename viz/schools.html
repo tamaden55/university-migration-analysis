@@ -4,116 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>高校と大学の設置数、そして流出 2025年度</title>
+<link rel="stylesheet" href="shared/base.css">
 <style>
-  :root {
-    color-scheme: light;
-    --surface-1: #fcfcfb;
-    --plane: #f9f9f7;
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --muted: #898781;
-    --gridline: #e1e0d9;
-    --axis: #c3c2b7;
-    --border: rgba(11, 11, 11, 0.10);
-    --accent: #2a78d6;
-    --national: #2a78d6;
-    --public: #eb6834;
-    --private: #1baf7a;
-    --pole-in: #2a78d6;
-    --pole-out: #e34948;
-    --pole-mid: #f0efec;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --surface-1: #1a1a19;
-      --plane: #0d0d0d;
-      --text-primary: #ffffff;
-      --text-secondary: #c3c2b7;
-      --muted: #898781;
-      --gridline: #2c2c2a;
-      --axis: #383835;
-      --border: rgba(255, 255, 255, 0.10);
-      --accent: #3987e5;
-      --national: #3987e5;
-      --public: #d95926;
-      --private: #199e70;
-      --pole-in: #3987e5;
-      --pole-out: #e66767;
-      --pole-mid: #383835;
-    }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --surface-1: #1a1a19;
-    --plane: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --muted: #898781;
-    --gridline: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --accent: #3987e5;
-    --national: #3987e5;
-    --public: #d95926;
-    --private: #199e70;
-    --pole-in: #3987e5;
-    --pole-out: #e66767;
-    --pole-mid: #383835;
-  }
+  .panel + .panel { margin-top: 20px; }
 
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    padding: 24px 20px 48px;
-    background: var(--plane);
-    color: var(--text-primary);
-    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .wrap { max-width: 980px; margin: 0 auto; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  h2 { font-size: 16px; margin: 0 0 4px; }
-  .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 64ch; }
-  .nav { margin: 0 0 20px; font-size: 13px; display: flex; gap: 16px; flex-wrap: wrap; }
-  .nav a { color: var(--accent); }
-
-  .panel {
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 20px;
-  }
-
-  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-
-  .button {
-    appearance: none; border: 1px solid var(--axis); border-radius: 8px; background: transparent;
-    color: var(--text-primary); font: inherit; font-size: 13px; padding: 5px 12px; cursor: pointer;
-  }
-  .segmented { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
-  .segmented button {
-    appearance: none; border: 0; background: transparent; color: var(--text-secondary);
-    font: inherit; font-size: 13px; padding: 5px 12px; cursor: pointer;
-  }
-  .segmented button + button { border-left: 1px solid var(--axis); }
-  .segmented button[aria-pressed="true"] { background: var(--accent); color: #fff; }
-
-  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); margin-top: 10px; }
-  .legend .key { display: inline-flex; align-items: center; gap: 5px; }
   .legend .chip { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
 
-  table.bars { border-collapse: collapse; width: 100%; margin-top: 12px; font-size: 12px; }
+  table.bars { margin-top: 12px; }
   table.bars th { text-align: right; color: var(--muted); font-weight: 400; padding: 0 6px 6px; }
   table.bars th:first-child, table.bars th:nth-child(2) { text-align: left; }
-  table.bars td { padding: 1px 6px; border-bottom: 1px solid var(--gridline); }
+  table.bars td { padding: 1px 6px; }
   table.bars td.name { white-space: nowrap; }
   table.bars td.num { text-align: right; font-variant-numeric: tabular-nums; }
   table.bars td.plot { width: 46%; }
+  table.bars tr.selected td { background: var(--gridline); }
   .bar { display: flex; height: 13px; gap: 2px; }
   .bar span { display: block; border-radius: 2px; min-width: 1px; }
   .bar .n { background: var(--national); }
@@ -128,28 +32,17 @@
   .trend { stroke: var(--axis); stroke-width: 2; stroke-dasharray: 5 4; }
   .balance { stroke: var(--axis); stroke-width: 1; }
   .dot { stroke: var(--surface-1); stroke-width: 1.5; cursor: pointer; }
+  .dot.selected { stroke: var(--text-primary); stroke-width: 2.5; }
   .dot-label { fill: var(--text-secondary); font-size: 10px; pointer-events: none; }
-
-  .tooltip {
-    position: absolute; pointer-events: none; background: var(--surface-1);
-    border: 1px solid var(--border); border-radius: 8px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-    padding: 8px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap;
-    opacity: 0; transition: opacity 90ms; z-index: 2;
-  }
-  .tooltip .num { font-variant-numeric: tabular-nums; }
-  .tooltip .sub { color: var(--text-secondary); }
+  .dot-label.selected { fill: var(--text-primary); }
 
   .finding { margin: 10px 0 0; color: var(--text-secondary); max-width: 64ch; }
   .finding strong { color: var(--text-primary); }
 
-  details { margin-top: 16px; }
-  summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
-  table.data { border-collapse: collapse; margin-top: 10px; font-size: 12px; width: 100%; }
-  table.data th, table.data td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--gridline); }
-  table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data th, table.data td { padding: 4px 8px 4px 0; }
+  table.data tr.selected td { background: var(--gridline); }
 
-  footer { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  footer { margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -160,10 +53,8 @@
     大学進学時の県外流出と突き合わせる。学校数は学校基本調査「都道府県別学校数」（高校）と
     「都道府県別 学校数及び学生数」（大学）による。
   </p>
-  <p class="nav">
-    <a href="index.html">47×47のヒートマップ</a>
-    <a href="graph.html">ノードとエッジの流れ</a>
-  </p>
+
+  <div id="viz-chrome"></div>
 
   <div class="panel">
     <div class="head">
@@ -210,6 +101,12 @@
       </div>
     </div>
 
+    <p class="hints">
+      <span>円にカーソルを合わせると内訳</span>
+      <span>クリックでその県を選択</span>
+      <span>選んだ県はヒートマップ・フロー図のタブへ引き継ぐ</span>
+    </p>
+
     <div class="scatter">
       <svg id="plot" viewBox="0 0 720 460" role="img" aria-label="受け皿の厚みと県外進学率の散布図"></svg>
       <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
@@ -222,6 +119,7 @@
         <span class="chip" style="background: var(--pole-in)"></span>流入超過
       </span>
       <span class="key">円の大きさ: 高校数</span>
+      <button type="button" class="button push-right" id="clear" disabled>選択を解除</button>
     </div>
 
     <p class="finding" id="finding"></p>
@@ -251,8 +149,6 @@
     </details>
   </div>
 
-  <p><button type="button" class="button" id="theme">配色: 明</button></p>
-
   <footer>
     受け入れ＝その県の大学に入学した人数（県外・海外出身を含む）。送り出し＝その県の高校から大学へ進んだ人数。
     倍率は受け入れ ÷ 送り出し。高校数は全日制・定時制の本校＋分校。
@@ -260,19 +156,25 @@
 </div>
 
 <script src="data.js"></script>
+<script src="shared/theme.js"></script>
+<script src="shared/format.js"></script>
+<script src="shared/state.js"></script>
+<script src="shared/chrome.js"></script>
 <script>
 (() => {
   "use strict";
+
+  if (VIZ.state.redirectIfNeeded("schools")) return;
+
+  // アドレス欄を書き換えられたときと戻る操作。状態を継ぎ足すより読み直すほうが確実。
+  VIZ.state.onChange(() => window.location.reload());
 
   const S = OD_DATA.schools;
   const N = OD_DATA.prefectures.length;
   const Y = OD_DATA.years.indexOf(S.year);
   if (Y < 0) throw new Error("学校数の年度に対応する OD データがない");
 
-  const numberFormat = new Intl.NumberFormat("ja-JP");
-  const percentFormat = new Intl.NumberFormat("ja-JP", {
-    style: "percent", minimumFractionDigits: 0, maximumFractionDigits: 0,
-  });
+  const format = VIZ.format;
 
   // 県ごとの指標をまとめる。すべて学校数と同じ年度で揃える。
   const items = [];
@@ -281,8 +183,8 @@
     const intake = OD_DATA.capacity.total[Y][i];
     items.push({
       index: i,
-      name: OD_DATA.prefectures[i],
-      short: OD_DATA.shortNames[i],
+      name: format.name(i),
+      short: format.short(i),
       highSchools: S.high_schools[i],
       highNational: S.high_national[i],
       highPublic: S.high_public[i],
@@ -304,37 +206,26 @@
   const maxHighSchools = Math.max(...items.map((item) => item.highSchools));
   const maxNet = Math.max(...items.map((item) => Math.abs(item.net)));
 
-  // ---- 配色 ----------------------------------------------------------------
-  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  const isDark = () => {
-    const chosen = document.documentElement.dataset.theme;
-    if (chosen === "dark") return true;
-    if (chosen === "light") return false;
-    return darkQuery.matches;
+  const saved = VIZ.state.get();
+  const state = {
+    sort: saved.sort,
+    axis: saved.axis,
+    selected: saved.pref === null ? null : format.toIndex(saved.pref),
   };
-  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-  function channels(hex) {
-    const value = parseInt(hex.slice(1), 16);
-    return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
-  }
-  function blendHex(a, b, t) {
-    const ca = channels(a);
-    const cb = channels(b);
-    return `#${ca.map((v, k) => Math.round(v + (cb[k] - v) * t).toString(16).padStart(2, "0")).join("")}`;
-  }
+  let theme = VIZ.theme.read();
+
   // 東京の純流入が桁外れなので、符号付きのべき乗で中位の県にも色を届かせる。
   function netColor(net) {
     const position = Math.sign(net) * Math.pow(Math.abs(net) / maxNet, 0.4);
     return position >= 0
-      ? blendHex(cssVar("--pole-mid"), cssVar("--pole-in"), position)
-      : blendHex(cssVar("--pole-mid"), cssVar("--pole-out"), -position);
+      ? VIZ.theme.blend(theme.poleMid, theme.poleIn, position)
+      : VIZ.theme.blend(theme.poleMid, theme.poleOut, -position);
   }
 
   // ---- 棒 ------------------------------------------------------------------
   const barsBody = document.getElementById("bars-body");
   const barsNote = document.getElementById("bars-note");
-  let sortKey = "count";
 
   const SORTERS = {
     count: (a, b) => b.universities - a.universities || a.index - b.index,
@@ -343,10 +234,10 @@
   };
 
   function renderBars() {
-    const sorted = items.slice().sort(SORTERS[sortKey]);
+    const sorted = items.slice().sort(SORTERS[state.sort]);
     barsBody.innerHTML = sorted.map((item) => {
       const scale = (value) => `${value / maxUniversities * 100}%`;
-      return `<tr>
+      return `<tr${item.index === state.selected ? ' class="selected"' : ""}>
         <td class="name">${item.name}</td>
         <td class="plot">
           <div class="bar" title="国立${item.univNational} / 公立${item.univPublic} / 私立${item.univPrivate}">
@@ -358,29 +249,33 @@
         <td class="num">${item.universities}</td>
         <td class="num">${item.highSchools}</td>
         <td class="num">${item.density.toFixed(1)}</td>
-        <td class="num">${percentFormat.format(item.outRate)}</td>
+        <td class="num">${format.shareRough(item.outRate)}</td>
       </tr>`;
     }).join("");
   }
 
   const totalUniversities = items.reduce((sum, item) => sum + item.universities, 0);
   const totalHighSchools = items.reduce((sum, item) => sum + item.highSchools, 0);
-  barsNote.textContent = `${S.year}年度 / 大学 ${numberFormat.format(totalUniversities)}校、`
-    + `高校 ${numberFormat.format(totalHighSchools)}校`;
+  barsNote.textContent = `${S.year}年度 / 大学 ${format.count(totalUniversities)}校、`
+    + `高校 ${format.count(totalHighSchools)}校`;
 
   const sortButtons = {
     count: document.getElementById("sort-count"),
     density: document.getElementById("sort-density"),
     code: document.getElementById("sort-code"),
   };
-  for (const [key, button] of Object.entries(sortButtons)) {
-    button.addEventListener("click", () => {
-      sortKey = key;
-      for (const [other, element] of Object.entries(sortButtons)) {
-        element.setAttribute("aria-pressed", other === key ? "true" : "false");
-      }
-      renderBars();
-    });
+
+  function setSort(sort, { silent = false } = {}) {
+    state.sort = sort;
+    for (const [key, button] of Object.entries(sortButtons)) {
+      button.setAttribute("aria-pressed", key === sort ? "true" : "false");
+    }
+    if (!silent) VIZ.state.patch({ sort });
+    renderBars();
+  }
+
+  for (const sort of Object.keys(sortButtons)) {
+    sortButtons[sort].addEventListener("click", () => setSort(sort));
   }
 
   // ---- 散布図 --------------------------------------------------------------
@@ -406,7 +301,6 @@
       format: (value) => value.toFixed(1),
     },
   };
-  let measure = MEASURES.ratio;
 
   function correlation(getX, getY) {
     const xs = items.map(getX);
@@ -426,6 +320,7 @@
   }
 
   function renderPlot() {
+    const measure = MEASURES[state.axis];
     const getX = (item) => item[measure.key];
     const getY = (item) => item.outRate;
     const xs = items.map(getX);
@@ -444,7 +339,7 @@
     for (const value of [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]) {
       parts.push(`<line class="grid" x1="${M.left}" x2="${W - M.right}" y1="${sy(value)}" y2="${sy(value)}"></line>`);
       parts.push(`<text class="tick" x="${M.left - 8}" y="${sy(value) + 3}" text-anchor="end">`
-        + `${percentFormat.format(value)}</text>`);
+        + `${format.shareRough(value)}</text>`);
     }
     for (const value of measure.ticks) {
       if (value < domain[0] || value > domain[1]) continue;
@@ -473,24 +368,25 @@
     parts.push(`<text class="axis-title" transform="translate(16 ${(M.top + H - M.bottom) / 2}) rotate(-90)" `
       + `text-anchor="middle">県外進学率</text>`);
 
-    // 大きい県から置き、重なったラベルは捨てる。
+    // 大きい県から置き、重なったラベルは捨てる。選択中の県だけは必ず出す。
     const placed = [];
     const ordered = items.slice().sort((a, b) => b.highSchools - a.highSchools);
     const labels = [];
     for (const item of ordered) {
+      const chosen = item.index === state.selected;
       const x = sx(getX(item)) + radius(item) + 3;
       const y = sy(getY(item)) + 3;
-      const width = item.short.length * 10 + 2;
-      const box = { x, y: y - 10, w: width, h: 12 };
+      const box = { x, y: y - 10, w: item.short.length * 10 + 2, h: 12 };
       const hit = placed.some((other) => box.x < other.x + other.w && box.x + box.w > other.x
         && box.y < other.y + other.h && box.y + box.h > other.y);
-      if (hit) continue;
+      if (hit && !chosen) continue;
       placed.push(box);
-      labels.push(`<text class="dot-label" x="${x}" y="${y}">${item.short}</text>`);
+      labels.push(`<text class="dot-label${chosen ? " selected" : ""}" x="${x}" y="${y}">${item.short}</text>`);
     }
 
     for (const item of items) {
-      parts.push(`<circle class="dot" data-index="${item.index}" cx="${sx(getX(item))}" `
+      parts.push(`<circle class="dot${item.index === state.selected ? " selected" : ""}" `
+        + `data-index="${item.index}" cx="${sx(getX(item))}" `
         + `cy="${sy(getY(item))}" r="${radius(item)}" fill="${netColor(item.net)}"></circle>`);
     }
     parts.push(...labels);
@@ -502,26 +398,27 @@
         : "高校数に対して大学が薄い県ほど県外へ出る。ただし大学数そのものは高校数とほぼ比例するため、数を数えるだけでは差が出ない。"}`;
 
     for (const circle of plot.querySelectorAll(".dot")) {
-      circle.addEventListener("mouseenter", (event) => showTooltip(Number(circle.dataset.index), event));
-      circle.addEventListener("mousemove", (event) => showTooltip(Number(circle.dataset.index), event));
+      const index = Number(circle.dataset.index);
+      circle.addEventListener("mouseenter", (event) => showTooltip(index, event));
+      circle.addEventListener("mousemove", (event) => showTooltip(index, event));
       circle.addEventListener("mouseleave", () => { tooltip.style.opacity = "0"; });
+      circle.addEventListener("click", () => setSelected(index === state.selected ? null : index));
     }
   }
 
   function showTooltip(index, event) {
     const item = items[index];
-    const sign = item.net > 0 ? "+" : "";
     tooltip.innerHTML = [
       `<strong>${item.name}</strong>`,
       `<span class="sub">高校 ${item.highSchools}校`
         + `（国立${item.highNational} / 公立${item.highPublic} / 私立${item.highPrivate}）</span>`,
       `<span class="sub">大学 ${item.universities}校`
         + `（国立${item.univNational} / 公立${item.univPublic} / 私立${item.univPrivate}）</span>`,
-      `受け入れ <span class="num">${numberFormat.format(item.intake)}</span>`
-        + ` / 送り出し <span class="num">${numberFormat.format(item.send)}</span>`,
+      `受け入れ <span class="num">${format.count(item.intake)}</span>`
+        + ` / 送り出し <span class="num">${format.count(item.send)}</span>`,
       `倍率 <span class="num">${item.ratio.toFixed(2)}</span>`
-        + ` / 県外進学率 <span class="num">${percentFormat.format(item.outRate)}</span>`,
-      `純流入 <span class="num">${sign}${numberFormat.format(item.net)}</span>`,
+        + ` / 県外進学率 <span class="num">${format.share(item.outRate)}</span>`,
+      `純流入 <span class="num">${format.signed(item.net)}</span>`,
     ].join("<br>");
     tooltip.style.opacity = "1";
 
@@ -538,50 +435,72 @@
     ratio: document.getElementById("x-ratio"),
     density: document.getElementById("x-density"),
   };
-  for (const [key, button] of Object.entries(measureButtons)) {
-    button.addEventListener("click", () => {
-      measure = MEASURES[key];
-      for (const [other, element] of Object.entries(measureButtons)) {
-        element.setAttribute("aria-pressed", other === key ? "true" : "false");
-      }
-      renderPlot();
-    });
-  }
 
-  // ---- 表 ------------------------------------------------------------------
-  document.getElementById("data-body").innerHTML = items
-    .slice()
-    .sort((a, b) => a.ratio - b.ratio)
-    .map((item) => `<tr>
-      <td>${item.name}</td>
-      <td class="num">${item.highSchools}</td>
-      <td class="num">${item.highNational}</td>
-      <td class="num">${item.highPublic}</td>
-      <td class="num">${item.highPrivate}</td>
-      <td class="num">${item.universities}</td>
-      <td class="num">${item.univNational}</td>
-      <td class="num">${item.univPublic}</td>
-      <td class="num">${item.univPrivate}</td>
-      <td class="num">${numberFormat.format(item.intake)}</td>
-      <td class="num">${numberFormat.format(item.send)}</td>
-      <td class="num">${item.ratio.toFixed(2)}</td>
-      <td class="num">${percentFormat.format(item.outRate)}</td>
-    </tr>`).join("");
-
-  // ---- 配色トグル ----------------------------------------------------------
-  const themeButton = document.getElementById("theme");
-  function applyTheme() {
-    themeButton.textContent = `配色: ${isDark() ? "暗" : "明"}`;
+  function setAxis(axis, { silent = false } = {}) {
+    state.axis = axis;
+    for (const [key, button] of Object.entries(measureButtons)) {
+      button.setAttribute("aria-pressed", key === axis ? "true" : "false");
+    }
+    if (!silent) VIZ.state.patch({ axis });
     renderPlot();
   }
-  themeButton.addEventListener("click", () => {
-    document.documentElement.dataset.theme = isDark() ? "light" : "dark";
-    applyTheme();
-  });
-  darkQuery.addEventListener("change", applyTheme);
 
-  renderBars();
-  applyTheme();
+  for (const axis of Object.keys(measureButtons)) {
+    measureButtons[axis].addEventListener("click", () => setAxis(axis));
+  }
+
+  // ---- 選択県 --------------------------------------------------------------
+  const clearButton = document.getElementById("clear");
+  const dataBody = document.getElementById("data-body");
+
+  function renderTable() {
+    dataBody.innerHTML = items
+      .slice()
+      .sort((a, b) => a.ratio - b.ratio)
+      .map((item) => `<tr${item.index === state.selected ? ' class="selected"' : ""}>
+        <td>${item.name}</td>
+        <td class="num">${item.highSchools}</td>
+        <td class="num">${item.highNational}</td>
+        <td class="num">${item.highPublic}</td>
+        <td class="num">${item.highPrivate}</td>
+        <td class="num">${item.universities}</td>
+        <td class="num">${item.univNational}</td>
+        <td class="num">${item.univPublic}</td>
+        <td class="num">${item.univPrivate}</td>
+        <td class="num">${format.count(item.intake)}</td>
+        <td class="num">${format.count(item.send)}</td>
+        <td class="num">${item.ratio.toFixed(2)}</td>
+        <td class="num">${format.shareRough(item.outRate)}</td>
+      </tr>`).join("");
+  }
+
+  function setSelected(index, { silent = false } = {}) {
+    state.selected = index;
+    clearButton.disabled = index === null;
+    if (!silent) VIZ.state.patch({ pref: index === null ? null : format.toJis(index) });
+    renderBars();
+    renderPlot();
+    renderTable();
+  }
+
+  clearButton.addEventListener("click", () => setSelected(null));
+
+  // ---- 起動 ----------------------------------------------------------------
+  VIZ.chrome.mount({
+    view: "schools",
+    frozen: true,
+    frozenYear: S.year,
+    note: `学校数は${S.year}年度のみ。年度は他の2ビューへ引き継ぐ。`,
+    onTheme: () => {
+      theme = VIZ.theme.read();
+      renderPlot();
+    },
+  });
+
+  setSort(state.sort, { silent: true });
+  setAxis(state.axis, { silent: true });
+  setSelected(state.selected, { silent: true });
+  clearButton.disabled = state.selected === null;
 })();
 </script>
 </body>

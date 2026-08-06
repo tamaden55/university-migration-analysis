@@ -4,152 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大学進学にともなう都道府県間移動 2015-2025</title>
+<link rel="stylesheet" href="shared/base.css">
 <style>
-  :root {
-    color-scheme: light;
-    --surface-1: #fcfcfb;
-    --plane: #f9f9f7;
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --muted: #898781;
-    --gridline: #e1e0d9;
-    --axis: #c3c2b7;
-    --border: rgba(11, 11, 11, 0.10);
-    --diagonal: #e6e5e0;
-    --accent: #2a78d6;
-  }
-  /* 暗色の値。OS 設定と、画面上の配色トグルの両方から適用する。 */
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --surface-1: #1a1a19;
-      --plane: #0d0d0d;
-      --text-primary: #ffffff;
-      --text-secondary: #c3c2b7;
-      --muted: #898781;
-      --gridline: #2c2c2a;
-      --axis: #383835;
-      --border: rgba(255, 255, 255, 0.10);
-      --diagonal: #43423e;
-      --accent: #3987e5;
-    }
-  }
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --surface-1: #1a1a19;
-    --plane: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --muted: #898781;
-    --gridline: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --diagonal: #43423e;
-    --accent: #3987e5;
-  }
-
-  * { box-sizing: border-box; }
-
-  body {
-    margin: 0;
-    padding: 24px 20px 48px;
-    background: var(--plane);
-    color: var(--text-primary);
-    font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .wrap { max-width: 980px; margin: 0 auto; }
-
-  h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.01em; }
-
-  .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 62ch; }
-
-  .nav { margin: 0 0 20px; font-size: 13px; }
-  .nav a { color: var(--accent); }
-
-  .panel {
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-  }
-
-  .controls {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 16px;
-    margin-bottom: 16px;
-  }
-
-  .segmented {
-    display: inline-flex;
-    border: 1px solid var(--axis);
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .segmented button {
-    appearance: none;
-    border: 0;
-    background: transparent;
-    color: var(--text-secondary);
-    font: inherit;
-    font-size: 13px;
-    padding: 6px 12px;
-    cursor: pointer;
-  }
-  .segmented button + button { border-left: 1px solid var(--axis); }
-  .segmented button[aria-pressed="true"] { background: var(--accent); color: #fff; }
-
-  .play {
-    appearance: none;
-    border: 1px solid var(--axis);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--text-primary);
-    font: inherit;
-    font-size: 13px;
-    padding: 6px 14px;
-    cursor: pointer;
-    min-width: 84px;
-  }
-
-  .timeline { flex: 1 1 260px; display: flex; align-items: center; gap: 12px; min-width: 260px; }
-  .timeline input[type="range"] { flex: 1; accent-color: var(--accent); }
-
-  .year {
-    font-size: 22px;
-    font-variant-numeric: tabular-nums;
-    min-width: 4.2em;
-    text-align: right;
-  }
-  .year small { display: block; font-size: 11px; color: var(--muted); line-height: 1.2; }
-
-  .chart { position: relative; }
-  canvas { display: block; max-width: 100%; }
-
-  .tooltip {
-    position: absolute;
-    pointer-events: none;
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-    padding: 8px 10px;
-    font-size: 12px;
-    line-height: 1.5;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity 90ms;
-    z-index: 2;
-  }
-  .tooltip strong { font-size: 13px; }
-  .tooltip .num { font-variant-numeric: tabular-nums; }
-  .tooltip .sub { color: var(--text-secondary); }
-
-  .legend { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
   .legend .bar { width: 200px; height: 10px; border-radius: 2px; border: 1px solid var(--border); }
   .legend .ticks {
     position: relative;
@@ -160,7 +16,6 @@
     font-variant-numeric: tabular-nums;
   }
   .legend .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
-  .legend .note { font-size: 12px; color: var(--text-secondary); }
   .legend .swatch {
     display: inline-block;
     width: 10px;
@@ -175,15 +30,6 @@
   .stat .label { font-size: 11px; color: var(--muted); letter-spacing: 0.02em; }
   .stat .value { font-size: 19px; font-variant-numeric: tabular-nums; }
   .stat .value small { font-size: 12px; color: var(--text-secondary); }
-
-  details { margin-top: 20px; }
-  summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
-  table { border-collapse: collapse; margin-top: 10px; font-size: 12px; width: 100%; }
-  th, td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--gridline); }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-
-  footer { color: var(--muted); font-size: 12px; margin-top: 22px; }
-  footer a { color: inherit; }
 </style>
 </head>
 <body>
@@ -194,11 +40,8 @@
     左上から右下に伸びる対角線上は県内進学。
     出典は文部科学省「学校基本調査」の各年度「出身高校の所在地県別入学者数」。
   </p>
-  <p class="nav">
-    <a href="graph.html">地図上のノードとエッジで見る</a>
-    ・
-    <a href="schools.html">高校と大学の設置数と突き合わせる</a>
-  </p>
+
+  <div id="viz-chrome"></div>
 
   <div class="panel">
     <div class="controls">
@@ -206,14 +49,14 @@
         <button type="button" id="mode-count" aria-pressed="true">実数</button>
         <button type="button" id="mode-share" aria-pressed="false">流出構成比</button>
       </div>
-      <button type="button" class="play" id="play">▶ 再生</button>
-      <button type="button" class="play" id="theme" aria-label="配色の切り替え">配色: 明</button>
-      <div class="timeline">
-        <input type="range" id="slider" min="0" max="1000" value="0" step="1"
-               aria-label="年度" aria-valuetext="2015年度">
-        <div class="year" id="year-label">2015<small>年度</small></div>
-      </div>
+      <button type="button" class="button" id="clear" disabled>選択を解除</button>
     </div>
+
+    <p class="hints">
+      <span>セルにカーソルを合わせると内訳</span>
+      <span>クリックで固定、再クリックで解除</span>
+      <span>選んだ県はフロー図・設置数のタブへ引き継ぐ</span>
+    </p>
 
     <div class="chart">
       <canvas id="heatmap"></canvas>
@@ -221,12 +64,12 @@
     </div>
 
     <div class="legend">
-      <span class="note" id="legend-title">入学者数</span>
+      <span id="legend-title">入学者数</span>
       <div>
         <div class="bar" id="legend-bar"></div>
         <div class="ticks" id="legend-ticks"></div>
       </div>
-      <span class="note" id="diagonal-note" hidden><span class="swatch"></span>対角 = 県内進学（分母から除外）</span>
+      <span hidden id="diagonal-note"><span class="swatch"></span>対角 = 県内進学（分母から除外）</span>
     </div>
 
     <div class="summary">
@@ -265,19 +108,28 @@
   </div>
 
   <footer>
-    セルにカーソルを合わせると内訳が出る。クリックで固定・再クリックで解除。
     年をまたぐ動きは色の補間で見せているが、数値は常に最寄りの年度の実数である。
     「その他」（海外・不明の高校出身）は都道府県に対応付けられないため除外している。
   </footer>
 </div>
 
 <script src="data.js"></script>
+<script src="shared/theme.js"></script>
+<script src="shared/format.js"></script>
+<script src="shared/state.js"></script>
+<script src="shared/chrome.js"></script>
 <script>
 (() => {
   "use strict";
 
+  if (VIZ.state.redirectIfNeeded("heatmap")) return;
+
+  // アドレス欄を書き換えられたときと戻る操作。状態を継ぎ足すより読み直すほうが確実。
+  VIZ.state.onChange(() => window.location.reload());
+
   const N = OD_DATA.prefectures.length;
   const YEARS = OD_DATA.years;
+  const format = VIZ.format;
 
   // 逐次配色（青、100→700）。明色モードでは最も薄い段が背景に溶け、ゼロ付近が自然に沈む。
   const RAMP = [
@@ -354,73 +206,35 @@
   }
 
   // ---- 状態 ----------------------------------------------------------------
+  const saved = VIZ.state.get();
   const state = {
-    mode: "count",
-    t: 0,               // 0 .. YEARS.length - 1（小数は年度間の補間）
-    playing: false,
+    mode: saved.mode,
     hover: null,        // {row, col}
-    pinned: null,
+    // 県だけを指定して開かれたときは、その県の対角セル（県内進学）を選んだ状態にする。
+    // 行と列の両方が引き立ち、「その県に注目している」状態が図の上で見える。
+    pinned: saved.pref === null
+      ? null
+      : { row: format.toIndex(saved.pref), col: format.toIndex(saved.pref) },
   };
-
-  function channels(hex) {
-    const value = parseInt(hex.slice(1), 16);
-    return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
-  }
-
-  function blendHex(a, b, t) {
-    const ca = channels(a);
-    const cb = channels(b);
-    const hex = ca
-      .map((value, index) => Math.round(value + (cb[index] - value) * t)
-        .toString(16).padStart(2, "0"))
-      .join("");
-    return `#${hex}`;
-  }
 
   // 暗色モードは順序を反転する。ただし反転しただけでは最小値が濃紺のまま光り、
   // 「ほぼゼロ」が背景と別物に見えて盤面全体が埋まる。明色側で最も薄い段が紙に
   // 溶けるのと同じ状態を作るため、最下段を背景色そのものに置き、そこから立ち上げる。
   function darkRamp() {
     const reversed = RAMP.slice().reverse();
-    const foot = [1, 0.82, 0.6, 0.32].map((t) => blendHex(reversed[0], DARK_SURFACE, t));
+    const foot = [1, 0.82, 0.6, 0.32].map((t) => VIZ.theme.blend(reversed[0], DARK_SURFACE, t));
     return [...foot, ...reversed];
   }
 
-  const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-  function isDark() {
-    const chosen = document.documentElement.dataset.theme;
-    if (chosen === "dark") return true;
-    if (chosen === "light") return false;
-    return darkQuery.matches;
-  }
-
-  let theme = readTheme();
-
-  function readTheme() {
-    const style = getComputedStyle(document.documentElement);
-    const get = (name) => style.getPropertyValue(name).trim();
-    const dark = isDark();
-    return {
-      dark,
-      ramp: dark ? darkRamp() : RAMP,
-      surface: get("--surface-1"),
-      text: get("--text-primary"),
-      secondary: get("--text-secondary"),
-      muted: get("--muted"),
-      grid: get("--gridline"),
-      axis: get("--axis"),
-      diagonal: get("--diagonal"),
-      accent: get("--accent"),
-    };
-  }
+  let theme = VIZ.theme.read();
+  let ramp = VIZ.theme.isDark() ? darkRamp() : RAMP;
 
   function rampColor(position) {
     const clamped = Math.max(0, Math.min(1, position));
-    const scaledPosition = clamped * (theme.ramp.length - 1);
+    const scaledPosition = clamped * (ramp.length - 1);
     const low = Math.floor(scaledPosition);
-    const high = Math.min(theme.ramp.length - 1, low + 1);
-    return blendHex(theme.ramp[low], theme.ramp[high], scaledPosition - low);
+    const high = Math.min(ramp.length - 1, low + 1);
+    return VIZ.theme.blend(ramp[low], ramp[high], scaledPosition - low);
   }
 
   // ---- 描画 ----------------------------------------------------------------
@@ -436,9 +250,8 @@
 
   function frameValues() {
     const frames = scaled[state.mode];
-    const low = Math.floor(state.t);
-    const high = Math.min(frames.length - 1, low + 1);
-    return { low: frames[low], high: frames[high], f: state.t - low };
+    const { low, high, f } = VIZ.chrome.frame();
+    return { low: frames[low], high: frames[high], f };
   }
 
   // 補間中に片方だけ空セルの場合、色は「空 = 0」として扱い連続に見せる。
@@ -496,7 +309,7 @@
     ctx.textAlign = "right";
     for (let i = 0; i < N; i += 1) {
       ctx.fillStyle = focus && focus.row === i ? theme.text : theme.muted;
-      ctx.fillText(OD_DATA.shortNames[i], PAD.left - 5, PAD.top + i * CELL + CELL / 2 - 0.5);
+      ctx.fillText(format.short(i), PAD.left - 5, PAD.top + i * CELL + CELL / 2 - 0.5);
     }
 
     // 列（大学の所在地）
@@ -506,13 +319,12 @@
       ctx.translate(PAD.left + j * CELL + CELL / 2 - 0.5, PAD.top - 5);
       ctx.rotate(-Math.PI / 2);
       ctx.fillStyle = focus && focus.col === j ? theme.text : theme.muted;
-      ctx.fillText(OD_DATA.shortNames[j], 0, 0);
+      ctx.fillText(format.short(j), 0, 0);
       ctx.restore();
     }
 
     // 地方名の帯
     ctx.fillStyle = theme.secondary;
-    ctx.font = "10px system-ui, -apple-system, 'Hiragino Sans', sans-serif";
     ctx.textAlign = "center";
     for (const region of regionEdges) {
       const center = (region.start + region.end) / 2 * CELL;
@@ -525,7 +337,6 @@
     }
 
     // 軸の見出し。列・行それぞれの中央に置く。
-    ctx.textAlign = "center";
     ctx.fillStyle = theme.text;
     const middle = N * CELL / 2;
     ctx.fillText("大学の所在地", PAD.left + middle, TITLE_AT);
@@ -552,45 +363,32 @@
     ctx.strokeRect(x - 1, y - 1, CELL + 1, CELL + 1);
   }
 
-  // ---- 数値の読み出し ------------------------------------------------------
-  // 補間はあくまで色の話。表示する数値は必ず最寄りの年度の実数を使う。
-  function nearestYearIndex() {
-    return Math.min(YEARS.length - 1, Math.max(0, Math.round(state.t)));
-  }
-
-  const numberFormat = new Intl.NumberFormat("ja-JP");
-  const percentFormat = new Intl.NumberFormat("ja-JP", {
-    style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1,
-  });
-
+  // ---- ツールチップ --------------------------------------------------------
   function showTooltip(cell, clientX, clientY) {
-    const y = nearestYearIndex();
+    const y = VIZ.chrome.yearIndex();
     const { row, col } = cell;
     const value = OD_DATA.matrix[y][row][col];
     const outbound = OD_DATA.outbound[y][row];
     const inbound = OD_DATA.inbound[y][col];
-    const origin = OD_DATA.prefectures[row];
-    const destination = OD_DATA.prefectures[col];
-    const first = OD_DATA.matrix[0][row][col];
-    const delta = value - first;
-    const sign = delta > 0 ? "+" : "";
+    const origin = format.name(row);
+    const destination = format.name(col);
+    const delta = value - OD_DATA.matrix[0][row][col];
 
     const lines = [];
     if (row === col) {
       lines.push(`<strong>${origin} 県内進学</strong>`);
-      lines.push(`<span class="num">${numberFormat.format(value)}</span> 人`);
-      const total = value + outbound;
-      lines.push(`<span class="sub">県内進学率 ${percentFormat.format(value / total)}</span>`);
+      lines.push(`<span class="num">${format.count(value)}</span> 人`);
+      lines.push(`<span class="sub">県内進学率 ${format.share(value / (value + outbound))}</span>`);
     } else {
       lines.push(`<strong>${origin} → ${destination}</strong>`);
-      lines.push(`<span class="num">${numberFormat.format(value)}</span> 人`);
+      lines.push(`<span class="num">${format.count(value)}</span> 人`);
       lines.push(`<span class="sub">${origin}の県外進学者の `
-        + `${outbound ? percentFormat.format(value / outbound) : "–"}</span>`);
+        + `${outbound ? format.share(value / outbound) : "–"}</span>`);
       lines.push(`<span class="sub">${destination}への流入の `
-        + `${inbound ? percentFormat.format(value / inbound) : "–"}</span>`);
+        + `${inbound ? format.share(value / inbound) : "–"}</span>`);
     }
     lines.push(`<span class="sub">${YEARS[y]}年度 / 2015年度比 `
-      + `<span class="num">${sign}${numberFormat.format(delta)}</span></span>`);
+      + `<span class="num">${format.signed(delta)}</span></span>`);
 
     tooltip.innerHTML = lines.join("<br>");
     tooltip.style.opacity = "1";
@@ -610,6 +408,16 @@
     tooltip.style.opacity = "0";
   }
 
+  // 固定中のセルは年をまたいでも数値を追随させる。canvas は CSS で縮む場合がある。
+  function showPinned() {
+    if (!state.pinned) return;
+    const bounds = canvas.getBoundingClientRect();
+    const scale = bounds.width / WIDTH;
+    showTooltip(state.pinned,
+      bounds.left + (PAD.left + state.pinned.col * CELL + CELL) * scale,
+      bounds.top + (PAD.top + state.pinned.row * CELL + CELL) * scale);
+  }
+
   function cellAt(event) {
     const bounds = canvas.getBoundingClientRect();
     const scale = WIDTH / bounds.width;
@@ -620,6 +428,19 @@
     if (row < 0 || col < 0 || row >= N || col >= N) return null;
     return { row, col };
   }
+
+  const clearButton = document.getElementById("clear");
+
+  // 注目県として外へ渡すのは行、つまり出身県のほう。どの県から出た流れを見ているかが主語になる。
+  function setPinned(cell, { silent = false } = {}) {
+    state.pinned = cell;
+    clearButton.disabled = cell === null;
+    if (!silent) VIZ.state.patch({ pref: cell === null ? null : format.toJis(cell.row) });
+    if (!cell) hideTooltip();
+    draw();
+  }
+
+  clearButton.addEventListener("click", () => setPinned(null));
 
   canvas.addEventListener("mousemove", (event) => {
     const cell = cellAt(event);
@@ -639,9 +460,8 @@
     const cell = cellAt(event);
     if (!cell) return;
     const same = state.pinned && state.pinned.row === cell.row && state.pinned.col === cell.col;
-    state.pinned = same ? null : cell;
+    setPinned(same ? null : cell);
     if (state.pinned) showTooltip(state.pinned, event.clientX, event.clientY);
-    draw();
   });
 
   // ---- 凡例 ----------------------------------------------------------------
@@ -651,8 +471,8 @@
   const diagonalNote = document.getElementById("diagonal-note");
 
   function renderLegend() {
-    const stops = theme.ramp.map((hex, index) =>
-      `${hex} ${(index / (theme.ramp.length - 1) * 100).toFixed(1)}%`);
+    const stops = ramp.map((hex, index) =>
+      `${hex} ${(index / (ramp.length - 1) * 100).toFixed(1)}%`);
     legendBar.style.background = `linear-gradient(to right, ${stops.join(", ")})`;
 
     const ticks = [];
@@ -661,7 +481,7 @@
       diagonalNote.hidden = true;
       for (const value of [100, 1000, 10000, 50000]) {
         if (value > maxCount) break;
-        ticks.push({ at: countPosition(value), text: numberFormat.format(value) });
+        ticks.push({ at: countPosition(value), text: format.count(value) });
       }
     } else {
       legendTitle.textContent = "出身県の県外進学者に占める割合（非線形）";
@@ -685,7 +505,7 @@
   let renderedYear = -1;
 
   function renderYearDetails() {
-    const y = nearestYearIndex();
+    const y = VIZ.chrome.yearIndex();
     if (y === renderedYear) return;
     renderedYear = y;
 
@@ -699,12 +519,12 @@
       if (OD_DATA.netInflow[y][i] > OD_DATA.netInflow[y][topIn]) topIn = i;
       if (OD_DATA.netInflow[y][i] < OD_DATA.netInflow[y][topOut]) topOut = i;
     }
-    statMovers.textContent = `${numberFormat.format(movers)} 人`;
-    statRate.textContent = percentFormat.format(movers / entrants);
-    statTopIn.innerHTML = `${OD_DATA.shortNames[topIn]} `
-      + `<small>+${numberFormat.format(OD_DATA.netInflow[y][topIn])}</small>`;
-    statTopOut.innerHTML = `${OD_DATA.shortNames[topOut]} `
-      + `<small>${numberFormat.format(OD_DATA.netInflow[y][topOut])}</small>`;
+    statMovers.textContent = `${format.count(movers)} 人`;
+    statRate.textContent = format.share(movers / entrants);
+    statTopIn.innerHTML = `${format.short(topIn)} `
+      + `<small>${format.signed(OD_DATA.netInflow[y][topIn])}</small>`;
+    statTopOut.innerHTML = `${format.short(topOut)} `
+      + `<small>${format.signed(OD_DATA.netInflow[y][topOut])}</small>`;
 
     const flows = [];
     for (let i = 0; i < N; i += 1) {
@@ -716,90 +536,12 @@
     }
     flows.sort((a, b) => b.value - a.value);
     tableBody.innerHTML = flows.slice(0, 40).map((flow) => `<tr>
-        <td>${OD_DATA.prefectures[flow.i]}</td>
-        <td>${OD_DATA.prefectures[flow.j]}</td>
-        <td class="num">${numberFormat.format(flow.value)}</td>
-        <td class="num">${percentFormat.format(flow.share)}</td>
+        <td>${format.name(flow.i)}</td>
+        <td>${format.name(flow.j)}</td>
+        <td class="num">${format.count(flow.value)}</td>
+        <td class="num">${format.share(flow.share)}</td>
       </tr>`).join("");
   }
-
-  // ---- 時間軸 --------------------------------------------------------------
-  const slider = document.getElementById("slider");
-  const yearLabel = document.getElementById("year-label");
-  const playButton = document.getElementById("play");
-  const SPAN = YEARS.length - 1;
-  const SEGMENT_MS = 1100;   // 1年ぶんの送り時間
-
-  function updateYearLabel() {
-    const nearest = nearestYearIndex();
-    const between = Math.abs(state.t - nearest) > 0.02;
-    const caption = between
-      ? `${YEARS[Math.floor(state.t)]} → ${YEARS[Math.ceil(state.t)]}`
-      : "年度";
-    yearLabel.innerHTML = `${YEARS[nearest]}<small>${caption}</small>`;
-    slider.setAttribute("aria-valuetext", `${YEARS[nearest]}年度`);
-  }
-
-  function setT(value, { fromSlider = false } = {}) {
-    state.t = Math.max(0, Math.min(SPAN, value));
-    if (!fromSlider) slider.value = String(Math.round(state.t / SPAN * 1000));
-    updateYearLabel();
-    renderYearDetails();
-    if (state.pinned) {
-      // 固定中のセルは年をまたいでも数値を追随させる。canvas は CSS で縮む場合がある。
-      const bounds = canvas.getBoundingClientRect();
-      const scale = bounds.width / WIDTH;
-      showTooltip(state.pinned,
-        bounds.left + (PAD.left + state.pinned.col * CELL + CELL) * scale,
-        bounds.top + (PAD.top + state.pinned.row * CELL + CELL) * scale);
-    }
-    draw();
-  }
-
-  slider.addEventListener("input", () => {
-    stop();
-    setT(Number(slider.value) / 1000 * SPAN, { fromSlider: true });
-  });
-
-  // 各年度で一拍おいて見えるよう、区間ごとに ease-in-out をかける。
-  function ease(x) {
-    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-  }
-
-  let rafId = 0;
-  let lastStamp = 0;
-  let rawT = 0;
-
-  function tick(stamp) {
-    if (!state.playing) return;
-    const delta = lastStamp ? (stamp - lastStamp) : 0;
-    lastStamp = stamp;
-    rawT += delta / SEGMENT_MS;
-    if (rawT >= SPAN) rawT = 0;
-    const segment = Math.floor(rawT);
-    setT(segment + ease(rawT - segment));
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function play() {
-    state.playing = true;
-    playButton.textContent = "❙❙ 停止";
-    rawT = state.t >= SPAN - 0.001 ? 0 : state.t;
-    lastStamp = 0;
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function stop() {
-    if (!state.playing) return;
-    state.playing = false;
-    playButton.textContent = "▶ 再生";
-    cancelAnimationFrame(rafId);
-  }
-
-  playButton.addEventListener("click", () => {
-    if (state.playing) stop();
-    else play();
-  });
 
   // ---- モード切替 ----------------------------------------------------------
   const modeButtons = {
@@ -807,39 +549,43 @@
     share: document.getElementById("mode-share"),
   };
 
-  for (const [mode, button] of Object.entries(modeButtons)) {
-    button.addEventListener("click", () => {
-      state.mode = mode;
-      for (const [key, other] of Object.entries(modeButtons)) {
-        other.setAttribute("aria-pressed", key === mode ? "true" : "false");
-      }
-      renderLegend();
-      draw();
-    });
-  }
-
-  // ---- 配色 ----------------------------------------------------------------
-  const themeButton = document.getElementById("theme");
-
-  function applyTheme() {
-    theme = readTheme();
-    themeButton.textContent = `配色: ${theme.dark ? "暗" : "明"}`;
+  function setMode(mode, { silent = false } = {}) {
+    state.mode = mode;
+    for (const [key, other] of Object.entries(modeButtons)) {
+      other.setAttribute("aria-pressed", key === mode ? "true" : "false");
+    }
+    if (!silent) VIZ.state.patch({ mode });
     renderLegend();
     draw();
   }
 
-  themeButton.addEventListener("click", () => {
-    document.documentElement.dataset.theme = isDark() ? "light" : "dark";
-    applyTheme();
-  });
+  for (const mode of Object.keys(modeButtons)) {
+    modeButtons[mode].addEventListener("click", () => setMode(mode));
+  }
 
-  darkQuery.addEventListener("change", applyTheme);
-
+  // ---- 起動 ----------------------------------------------------------------
   window.addEventListener("resize", resize);
 
-  applyTheme();
+  VIZ.chrome.mount({
+    view: "heatmap",
+    onYear: () => {
+      renderYearDetails();
+      showPinned();
+      draw();
+    },
+    onTheme: () => {
+      theme = VIZ.theme.read();
+      ramp = VIZ.theme.isDark() ? darkRamp() : RAMP;
+      renderLegend();
+      draw();
+    },
+  });
+
+  setMode(state.mode, { silent: true });
+  setPinned(state.pinned, { silent: true });
+  renderYearDetails();
   resize();
-  setT(0);
+  showPinned();
 })();
 </script>
 </body>

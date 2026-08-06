@@ -1,0 +1,176 @@
+/* 3ページ共通の土台。配色変数・枠・操作部品・表の見た目をここ1箇所で持つ。
+   各ページ固有の見た目（ヒートマップの凡例、散布図、棒など）は各 HTML に残す。 */
+
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --plane: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --muted: #898781;
+  --gridline: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --accent: #2a78d6;
+  --diagonal: #e6e5e0;
+  --national: #2a78d6;
+  --public: #eb6834;
+  --private: #1baf7a;
+  --pole-in: #2a78d6;
+  --pole-out: #e34948;
+  --pole-mid: #f0efec;
+}
+
+/* 暗色の値。OS 設定と、画面上の配色トグルの両方から適用する。 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --gridline: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3987e5;
+    --diagonal: #43423e;
+    --national: #3987e5;
+    --public: #d95926;
+    --private: #199e70;
+    --pole-in: #3987e5;
+    --pole-out: #e66767;
+    --pole-mid: #383835;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19;
+  --plane: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --muted: #898781;
+  --gridline: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --accent: #3987e5;
+  --diagonal: #43423e;
+  --national: #3987e5;
+  --public: #d95926;
+  --private: #199e70;
+  --pole-in: #3987e5;
+  --pole-out: #e66767;
+  --pole-mid: #383835;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 24px 20px 48px;
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.wrap { max-width: 980px; margin: 0 auto; }
+h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.01em; }
+h2 { font-size: 16px; margin: 0 0 4px; }
+.lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 78ch; }
+
+/* ---- 共通ヘッダ ---------------------------------------------------------- */
+.chrome {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
+  margin: 14px 0 18px; padding: 10px 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.tabs { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
+.tabs a {
+  font: inherit; font-size: 13px; padding: 6px 12px;
+  color: var(--text-secondary); text-decoration: none; white-space: nowrap;
+}
+.tabs a + a { border-left: 1px solid var(--axis); }
+.tabs a[aria-current="page"] { background: var(--accent); color: #fff; }
+.chrome .note { font-size: 11px; color: var(--muted); max-width: 16em; line-height: 1.35; }
+
+/* ---- 枠と操作 ------------------------------------------------------------ */
+.panel {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.controls + .controls { margin-top: 10px; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+.field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+.field input[type="range"] { accent-color: var(--accent); width: 118px; }
+.field .value { font-variant-numeric: tabular-nums; color: var(--text-primary); min-width: 5.5em; }
+
+.segmented { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
+.segmented button {
+  appearance: none; border: 0; background: transparent; color: var(--text-secondary);
+  font: inherit; font-size: 13px; padding: 6px 12px; cursor: pointer;
+}
+.segmented button + button { border-left: 1px solid var(--axis); }
+.segmented button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+.button {
+  appearance: none; border: 1px solid var(--axis); border-radius: 8px; background: transparent;
+  color: var(--text-primary); font: inherit; font-size: 13px; padding: 6px 14px; cursor: pointer;
+}
+.button[disabled] { opacity: 0.45; cursor: default; }
+.push-right { margin-left: auto; }
+
+.timeline { flex: 1 1 240px; display: flex; align-items: center; gap: 12px; min-width: 240px; }
+.timeline input[type="range"] { flex: 1; accent-color: var(--accent); }
+.timeline input[type="range"][disabled] { opacity: 0.4; }
+.year { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 4.2em; text-align: right; }
+.year small { display: block; font-size: 11px; color: var(--muted); line-height: 1.2; }
+
+/* ---- 図まわり ------------------------------------------------------------ */
+.chart { position: relative; margin-top: 10px; }
+canvas { display: block; max-width: 100%; }
+
+.hints {
+  display: flex; flex-wrap: wrap; gap: 2px 18px;
+  margin: 14px 0 0; padding: 10px 0 0; border-top: 1px solid var(--gridline);
+  font-size: 12px; color: var(--muted);
+}
+.hints span { white-space: nowrap; }
+
+.tooltip {
+  position: absolute; pointer-events: none;
+  background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  padding: 8px 10px; font-size: 12px; line-height: 1.5; white-space: nowrap;
+  opacity: 0; transition: opacity 90ms; z-index: 2; max-width: 280px;
+}
+.tooltip strong { font-size: 13px; }
+.tooltip .num { font-variant-numeric: tabular-nums; }
+.tooltip .sub { color: var(--text-secondary); }
+.tooltip hr { border: 0; border-top: 1px solid var(--gridline); margin: 5px 0; }
+
+.legend {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
+  margin-top: 14px; font-size: 12px; color: var(--text-secondary);
+}
+.legend .key { display: inline-flex; align-items: center; gap: 5px; }
+.legend [hidden] { display: none; }
+
+/* ---- 表 ------------------------------------------------------------------ */
+details { margin-top: 18px; }
+summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
+table { border-collapse: collapse; margin-top: 10px; font-size: 12px; width: 100%; }
+th, td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--gridline); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+footer { color: var(--muted); font-size: 12px; margin-top: 22px; }
+footer a { color: inherit; }
