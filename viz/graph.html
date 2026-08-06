@@ -67,7 +67,7 @@
 
   .wrap { max-width: 980px; margin: 0 auto; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 62ch; }
+  .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 78ch; }
   .nav { margin: 0 0 20px; font-size: 13px; }
   .nav a { color: var(--accent); }
 
@@ -94,18 +94,29 @@
     color: var(--text-primary); font: inherit; font-size: 13px; padding: 6px 14px; cursor: pointer;
   }
   .button[disabled] { opacity: 0.45; cursor: default; }
+  /* 配色は図の操作ではなくページの設定なので、行の右端へ離して置く */
+  .push-right { margin-left: auto; }
 
   .field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
-  .field input[type="range"] { accent-color: var(--accent); width: 140px; }
+  .field input[type="range"] { accent-color: var(--accent); width: 118px; }
   .field .value { font-variant-numeric: tabular-nums; color: var(--text-primary); min-width: 5.5em; }
+  .field #zoom-value { min-width: 3.4em; color: var(--muted); }
 
   .timeline { flex: 1 1 240px; display: flex; align-items: center; gap: 12px; min-width: 240px; }
   .timeline input[type="range"] { flex: 1; accent-color: var(--accent); }
   .year { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 4.2em; text-align: right; }
   .year small { display: block; font-size: 11px; color: var(--muted); line-height: 1.2; }
 
-  .chart { position: relative; margin-top: 14px; }
-  canvas { display: block; max-width: 100%; cursor: default; }
+  .hints {
+    display: flex; flex-wrap: wrap; gap: 2px 18px;
+    margin: 14px 0 0; padding: 10px 0 0; border-top: 1px solid var(--gridline);
+    font-size: 12px; color: var(--muted);
+  }
+  .hints span { white-space: nowrap; }
+
+  .chart { position: relative; margin-top: 10px; }
+  canvas { display: block; max-width: 100%; cursor: grab; touch-action: pan-y; }
+  canvas.grabbing { cursor: grabbing; }
 
   .tooltip {
     position: absolute; pointer-events: none; background: var(--surface-1);
@@ -147,10 +158,7 @@
   <h1>大学進学の都道府県間フロー</h1>
   <p class="lede">
     ノードが都道府県、矢印が「出身高校の所在地 → 入学した大学の所在地」の流れ。
-    矢印は出発する県の側が太く、向かう先へ細くなる。太さが人数、
-    ノードの色が純流入（流入 − 流出）。ノードの大きさは、その県の高校から大学へ進んだ人数（送り出し）と、
-    その県の大学が受け入れた人数（受け入れ）を切り替えられる。
-    県にカーソルを乗せると国公私立の内訳が出て、クリックするとその県に出入りする流れだけを表示する。
+    矢印は出発する県の側が太く、向かう先へ細くなる。太さが人数、ノードの色が純流入（流入 − 流出）を表す。
   </p>
   <p class="nav">
     <a href="index.html">47×47のヒートマップで見る</a>
@@ -160,11 +168,14 @@
 
   <div class="panel">
     <div class="controls">
-      <div class="segmented" role="group" aria-label="対象地域">
-        <button type="button" id="area-all" aria-pressed="true">全国</button>
-        <button type="button" id="area-east" aria-pressed="false">東日本</button>
-        <button type="button" id="area-west" aria-pressed="false">西日本</button>
-      </div>
+      <span class="field">
+        <span class="segmented" role="group" aria-label="表示範囲">
+          <button type="button" id="area-all" aria-pressed="true">全国</button>
+          <button type="button" id="area-east" aria-pressed="false">東日本</button>
+          <button type="button" id="area-west" aria-pressed="false">西日本</button>
+        </span>
+        <span class="value" id="zoom-value">1.0倍</span>
+      </span>
       <span class="field">
         大きさ
         <span class="segmented" role="group" aria-label="ノードの大きさ">
@@ -178,7 +189,7 @@
         <span class="value" id="threshold-value">500人以上</span>
       </label>
       <button type="button" class="button" id="clear" disabled>選択を解除</button>
-      <button type="button" class="button" id="theme">配色: 明</button>
+      <button type="button" class="button push-right" id="theme">配色: 明</button>
     </div>
 
     <div class="controls">
@@ -189,6 +200,14 @@
         <div class="year" id="year-label">2015<small>年度</small></div>
       </div>
     </div>
+
+    <p class="hints">
+      <span>県にカーソルを乗せると内訳</span>
+      <span>クリックでその県の流れだけ</span>
+      <span>ホイールで拡大縮小</span>
+      <span>ドラッグで移動</span>
+      <span>ダブルクリックで全国に戻る</span>
+    </p>
 
     <div class="chart">
       <canvas id="flowmap"></canvas>
@@ -232,6 +251,8 @@
 
   <footer>
     ノードの位置は県庁所在地のおおよその座標である。沖縄県だけは九州の南西に寄せて描いている。
+    表示範囲のボタンは、その地域が収まる位置へ視点を移すだけで、県や流れを絞り込みはしない。
+    範囲外へ向かう流れも切れずに描かれる。
     県を選ぶと、しきい値を無視してその県のすべての流れを出す。年をまたぐ動きは太さと色の補間で見せているが、
     数値は常に最寄りの年度の実数である。「その他」（海外・不明の高校出身）は除外している。
   </footer>
@@ -271,13 +292,12 @@
   const tooltip = document.getElementById("tooltip");
 
   // ---- 投影 ----------------------------------------------------------------
-  // 表示する地域の外接範囲に合わせて組み直す。地域を絞ったらその分だけ拡大される。
-  let points = [];
+  // 全国の外接範囲に合わせた1本きり。地域を絞る操作は投影ではなく後段のズームで表す。
   let HEIGHT = MAX_HEIGHT;
 
-  function project(indices) {
-    const lats = indices.map((index) => COORDS[index][0]);
-    const lons = indices.map((index) => COORDS[index][1]);
+  const points = (() => {
+    const lats = COORDS.map(([lat]) => lat);
+    const lons = COORDS.map(([, lon]) => lon);
     const latRange = [Math.min(...lats), Math.max(...lats)];
     const lonRange = [Math.min(...lons), Math.max(...lons)];
     const shrink = Math.cos((latRange[0] + latRange[1]) / 2 * Math.PI / 180);
@@ -287,10 +307,102 @@
     const offsetX = (WIDTH - spanX * scale) / 2;
 
     HEIGHT = Math.round(spanY * scale + PAD * 2);
-    points = COORDS.map(([lat, lon]) => ({
+    return COORDS.map(([lat, lon]) => ({
       x: offsetX + (lon - lonRange[0]) * shrink * scale,
       y: PAD + (latRange[1] - lat) * scale,
     }));
+  })();
+
+  // ---- ビュー変換 ----------------------------------------------------------
+  // 投影した座標（以下 world）に scale と平行移動を掛けて画面座標にする。
+  // 拡大への追随度は要素ごとに変える。座標は完全に、ノードや線幅は控えめに、文字は追随しない。
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 8;
+  const MARK_FOLLOW = 0.35;
+
+  const view = { scale: 1, tx: 0, ty: 0 };
+
+  const markScale = () => 1 + (view.scale - 1) * MARK_FOLLOW;
+  const screenOf = (point) => ({
+    x: point.x * view.scale + view.tx,
+    y: point.y * view.scale + view.ty,
+  });
+
+  // 平行移動の可動域。2段構えにしている。
+  // 投影の枠を外へはみ出させないのが1段目。ただし日本は枠の中を斜めに走る帯なので、
+  // 枠の北西・南東の隅は海しかない。拡大してそこへ寄せると1県も映らない眺めになる。
+  // そこで2段目に、画面の中心から最寄りの県までの距離に上限を置く。
+  // 画面の半分を 1 とした距離で測る。県が縁にかろうじて掛かるだけでは足りないので、内側で止める。
+  const REACH = 0.55;
+
+  function fenceToFrame() {
+    view.tx = Math.min(0, Math.max(WIDTH - WIDTH * view.scale, view.tx));
+    view.ty = Math.min(0, Math.max(HEIGHT - HEIGHT * view.scale, view.ty));
+  }
+
+  function clampView() {
+    view.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, view.scale));
+    fenceToFrame();
+
+    const halfWidth = WIDTH / 2 / view.scale;
+    const halfHeight = HEIGHT / 2 / view.scale;
+    const centerX = (WIDTH / 2 - view.tx) / view.scale;
+    const centerY = (HEIGHT / 2 - view.ty) / view.scale;
+
+    // 画面の半分を1とした距離で、いちばん近い県を測る。
+    let nearest = null;
+    let reach = Infinity;
+    for (const point of points) {
+      const distance = Math.max(
+        Math.abs(point.x - centerX) / halfWidth,
+        Math.abs(point.y - centerY) / halfHeight);
+      if (distance < reach) {
+        reach = distance;
+        nearest = point;
+      }
+    }
+
+    if (reach > REACH) {
+      const pull = 1 - REACH / reach;
+      view.tx = WIDTH / 2 - (centerX + (nearest.x - centerX) * pull) * view.scale;
+      view.ty = HEIGHT / 2 - (centerY + (nearest.y - centerY) * pull) * view.scale;
+      fenceToFrame();
+    }
+  }
+
+  // 指定した画面上の点を固定したまま倍率を変える。倍率が動かなければ false を返す。
+  function zoomAt(factor, x, y) {
+    const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, view.scale * factor));
+    if (Math.abs(next - view.scale) < 1e-6) return false;
+    const ratio = next / view.scale;
+    view.tx = x - (x - view.tx) * ratio;
+    view.ty = y - (y - view.ty) * ratio;
+    view.scale = next;
+    clampView();
+    return true;
+  }
+
+  // 与えた県群の外接範囲が収まる変換を作る。地域プリセットの実体。
+  const FIT_MARGIN = 34;
+
+  function fitTo(indices) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const index of indices) {
+      const point = points[index];
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    }
+    const spanX = maxX - minX + FIT_MARGIN * 2;
+    const spanY = maxY - minY + FIT_MARGIN * 2;
+    view.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(WIDTH / spanX, HEIGHT / spanY)));
+    view.tx = WIDTH / 2 - (minX + maxX) / 2 * view.scale;
+    view.ty = HEIGHT / 2 - (minY + maxY) / 2 * view.scale;
+    clampView();
   }
 
   // ---- 尺度 ----------------------------------------------------------------
@@ -329,15 +441,16 @@
   const edgeWidth = (movers) => 1 + 5.6 * Math.sqrt(movers / maxMovers);
   // 送り出し（その県の高校から進学した人数）と受け入れ（その県の大学に入った人数）を
   // 切り替える。定義域はモードごとに全年度で固定する。
+  // 密集はズームで解くので、等倍時の大きさは重なりぎりぎりまで上げてある。
   const nodeRadius = (value) =>
-    3 + 9 * Math.sqrt(value / (state.size === "send" ? maxEntrants : maxCapacity));
+    4.5 + 11.5 * Math.sqrt(value / (state.size === "send" ? maxEntrants : maxCapacity));
   // 東京の純流入は次点の4倍あり、線形でも平方根でも他県が白く飛ぶ。
   // 打ち切らずに中位まで色を届かせるため、符号付きのべき乗（0.4）を使う。
   const netPosition = (net) => Math.sign(net) * Math.pow(Math.abs(net) / maxNet, 0.4);
 
   // ---- 状態 ----------------------------------------------------------------
   const state = {
-    area: "all",
+    preset: "all",   // 押されている表示範囲ボタン。手で動かしたら null
     size: "send",
     threshold: 500,
     t: 0,
@@ -435,24 +548,11 @@
     return state.size === "send" ? entrantsAt(i) : capacityAt(i);
   }
 
-  function inArea(index) {
-    if (state.area === "all") return true;
-    return state.area === "east" ? index < EAST_END : index >= EAST_END;
-  }
-
-  function relayout() {
-    const indices = [];
-    for (let index = 0; index < N; index += 1) if (inArea(index)) indices.push(index);
-    project(indices);
-    resize();
-  }
-
   // 表示するエッジ。県を選んでいるときは、その県に触れる流れだけを最小人数まで下げて出す。
   function visibleEdges() {
     const shown = [];
     for (const pair of candidates) {
       const { i, j } = pair;
-      if (!inArea(i) || !inArea(j)) continue;
       const touchesFocus = state.focus !== null && (i === state.focus || j === state.focus);
       if (state.focus !== null && !touchesFocus) continue;
       const movers = movesAt(i, j);
@@ -501,12 +601,33 @@
   // 線は起点側が太く、行き先へ細くなる帯として描く。矢じりだけに向きを頼らせない。
   const TAPER_STEPS = 18;
   const TAPER_END = 0.24;
+  const MID_ARROW_SPAN = 150;   // これより長い流れには途中にも矢じりを置く
 
-  function drawEdge(edge) {
-    const from = points[edge.i];
-    const to = points[edge.j];
+  // 曲線上の t の位置に、進行方向を向いた矢じりを1つ塗る。
+  function drawArrow(from, control, to, t, size) {
+    const tip = pointOnCurve(from, control, to, t);
+    const slope = tangent(from, control, to, t);
+    const angle = Math.atan2(slope.y, slope.x);
+    ctx.beginPath();
+    ctx.moveTo(tip.x, tip.y);
+    ctx.lineTo(tip.x - size * Math.cos(angle - 0.38), tip.y - size * Math.sin(angle - 0.38));
+    ctx.lineTo(tip.x - size * Math.cos(angle + 0.38), tip.y - size * Math.sin(angle + 0.38));
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawEdge(edge, screen, mark) {
+    const from = screen[edge.i];
+    const to = screen[edge.j];
     const control = controlPoint(from, to);
-    const width = edgeWidth(edge.movers);
+    // 曲線は3つの制御点の凸包に収まる。画面から外れた束はここで捨てる。
+    const pad = 40;
+    if (Math.min(from.x, control.x, to.x) > WIDTH + pad
+      || Math.max(from.x, control.x, to.x) < -pad
+      || Math.min(from.y, control.y, to.y) > HEIGHT + pad
+      || Math.max(from.y, control.y, to.y) < -pad) return;
+
+    const width = edgeWidth(edge.movers) * mark;
 
     // 選択中の県、なければカーソルの下の県を基準に、流出と流入を塗り分ける。
     const anchor = state.focus !== null ? state.focus : state.hover;
@@ -518,9 +639,9 @@
     }
 
     // 終点はノードの縁で止め、その先を矢じりにあてる。
-    const radius = nodeRadius(sizeAt(edge.j));
+    const radius = nodeRadius(sizeAt(edge.j)) * mark;
     const span = Math.hypot(to.x - from.x, to.y - from.y) || 1;
-    const head = Math.max(6.5, width * 1.9);
+    const head = Math.max(6.5 * mark, width * 1.9);
     const tipAt = Math.max(0.05, 1 - (radius + 1) / span);
     const endAt = Math.max(0.02, tipAt - head / span);
 
@@ -548,20 +669,16 @@
     ctx.closePath();
     ctx.fill();
 
-    const tip = pointOnCurve(from, control, to, tipAt);
-    const slope = tangent(from, control, to, tipAt);
-    const angle = Math.atan2(slope.y, slope.x);
-    ctx.beginPath();
-    ctx.moveTo(tip.x, tip.y);
-    ctx.lineTo(tip.x - head * Math.cos(angle - 0.38), tip.y - head * Math.sin(angle - 0.38));
-    ctx.lineTo(tip.x - head * Math.cos(angle + 0.38), tip.y - head * Math.sin(angle + 0.38));
-    ctx.closePath();
-    ctx.fill();
+    drawArrow(from, control, to, tipAt, head);
+    // 長い流れは終点の矢じりが束に埋もれる。帯の途中にもう1つ置いて向きを補う。
+    if (span > MID_ARROW_SPAN) drawArrow(from, control, to, tipAt * 0.7, head * 0.78);
   }
 
-  function drawNode(index, dim) {
-    const point = points[index];
-    const radius = nodeRadius(sizeAt(index));
+  function drawNode(index, screen, mark, dim) {
+    const point = screen[index];
+    const radius = nodeRadius(sizeAt(index)) * mark;
+    if (point.x < -radius - 4 || point.x > WIDTH + radius + 4
+      || point.y < -radius - 4 || point.y > HEIGHT + radius + 4) return;
 
     ctx.globalAlpha = dim ? 0.25 : 1;
     ctx.fillStyle = netColor(netAt(index));
@@ -583,7 +700,8 @@
   }
 
   // ラベルは重なったら捨てる。規模の大きい県から順に置き、必ず出したい県は先に通す。
-  function drawLabels(priority, forced) {
+  // 文字は拡大に追随しない。拡大でノードの間隔だけが開き、ここを通るラベルが増える。
+  function drawLabels(priority, forced, screen, mark) {
     ctx.font = "11px system-ui, -apple-system, 'Hiragino Sans', sans-serif";
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
@@ -591,8 +709,9 @@
 
     for (const index of priority) {
       const name = OD_DATA.shortNames[index];
-      const point = points[index];
-      const radius = nodeRadius(sizeAt(index)) + 4;
+      const point = screen[index];
+      if (point.x < -60 || point.x > WIDTH + 60 || point.y < -20 || point.y > HEIGHT + 20) continue;
+      const radius = nodeRadius(sizeAt(index)) * mark + 4;
       const width = ctx.measureText(name).width;
       // 右端では文字が切れるので、ノードの左側へ回す。
       const flip = point.x + radius + width + 6 > WIDTH;
@@ -618,20 +737,23 @@
     ctx.fillStyle = theme.surface;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
+    const screen = points.map(screenOf);
+    const mark = markScale();
+
     const edges = visibleEdges();
     // 太い順に描き、細い線が上に載るようにする。
     edges.sort((a, b) => b.movers - a.movers);
-    for (const edge of edges) drawEdge(edge);
+    for (const edge of edges) drawEdge(edge, screen, mark);
 
     const touched = new Set();
     for (const edge of edges) { touched.add(edge.i); touched.add(edge.j); }
 
     const order = Array.from({ length: N }, (_, index) => index)
-      .filter(inArea)
       .sort((a, b) => sizeAt(b) - sizeAt(a));
     // 県を選んでいるとき、やり取りのない県は沈める。ラベルも出ないので浮いて見えない。
     for (const index of order) {
-      drawNode(index, state.focus !== null && !touched.has(index) && index !== state.focus);
+      drawNode(index, screen, mark,
+        state.focus !== null && !touched.has(index) && index !== state.focus);
     }
 
     const forced = new Set();
@@ -640,26 +762,33 @@
       for (const edge of edges) forced.add(edge.i === state.focus ? edge.j : edge.i);
     }
     if (state.hover !== null) forced.add(state.hover);
-    const priority = order.filter((index) => inArea(index)
-      && (state.focus === null || touched.has(index) || index === state.focus));
-    drawLabels(priority, forced);
+    const priority = order.filter((index) =>
+      state.focus === null || touched.has(index) || index === state.focus);
+    drawLabels(priority, forced, screen, mark);
 
     renderTable(edges);
   }
 
   // ---- 対話 ----------------------------------------------------------------
-  function nodeAt(event) {
+  // canvas は CSS で縮むことがあるので、まず canvas 座標へ直す。判定はそのまま画面座標で行う。
+  function canvasPoint(event) {
     const bounds = canvas.getBoundingClientRect();
     const factor = WIDTH / bounds.width;
-    const x = (event.clientX - bounds.left) * factor;
-    const y = (event.clientY - bounds.top) * factor;
+    return {
+      x: (event.clientX - bounds.left) * factor,
+      y: (event.clientY - bounds.top) * factor,
+    };
+  }
+
+  function nodeAt(event) {
+    const { x, y } = canvasPoint(event);
+    const mark = markScale();
     let best = null;
     let bestDistance = Infinity;
     for (let index = 0; index < N; index += 1) {
-      if (!inArea(index)) continue;
-      const point = points[index];
+      const point = screenOf(points[index]);
       const distance = Math.hypot(point.x - x, point.y - y);
-      const reach = Math.max(nodeRadius(sizeAt(index)) + 4, 9);
+      const reach = Math.max(nodeRadius(sizeAt(index)) * mark + 4, 9);
       if (distance <= reach && distance < bestDistance) {
         best = index;
         bestDistance = distance;
@@ -731,25 +860,89 @@
     tooltip.style.top = `${Math.max(0, top)}px`;
   }
 
-  canvas.addEventListener("mousemove", (event) => {
+  function hoverAt(event) {
     const index = nodeAt(event);
-    canvas.style.cursor = index === null ? "default" : "pointer";
-    if (index === state.hover && index === null) return;
+    canvas.style.cursor = index === null ? "" : "pointer";
+    if (index === null && state.hover === null) return;
     state.hover = index;
     if (index === null) tooltip.style.opacity = "0";
     else showTooltip(index, event.clientX, event.clientY);
     draw();
+  }
+
+  // ---- ズームとパン --------------------------------------------------------
+  const ZOOM_STEP = 1.15;
+  const DRAG_SLOP = 4;   // これ未満の移動はドラッグではなくクリックとして扱う
+
+  let drag = null;
+
+  canvas.addEventListener("wheel", (event) => {
+    const point = canvasPoint(event);
+    const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
+    // 上限・下限に張り付いていて動かせないときは、ページのスクロールに譲る。
+    if (!zoomAt(factor, point.x, point.y)) return;
+    event.preventDefault();
+    state.preset = null;
+    syncView();
+    hoverAt(event);
+    draw();
+  }, { passive: false });
+
+  canvas.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || event.pointerType === "touch") return;
+    drag = { x: event.clientX, y: event.clientY, tx: view.tx, ty: view.ty, moved: 0 };
+    canvas.setPointerCapture(event.pointerId);
+    canvas.classList.add("grabbing");
+    tooltip.style.opacity = "0";
   });
 
-  canvas.addEventListener("mouseleave", () => {
+  canvas.addEventListener("pointermove", (event) => {
+    if (!drag) {
+      hoverAt(event);
+      return;
+    }
+    const bounds = canvas.getBoundingClientRect();
+    const factor = WIDTH / bounds.width;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+    view.tx = drag.tx + dx * factor;
+    view.ty = drag.ty + dy * factor;
+    clampView();
+    if (drag.moved >= DRAG_SLOP) {
+      state.preset = null;
+      syncView();
+    }
+    draw();
+  });
+
+  function endDrag(event) {
+    if (!drag) return;
+    const { moved } = drag;
+    drag = null;
+    canvas.classList.remove("grabbing");
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    // 動かさずに離したならクリック。ドラッグの終わりで選択が変わると事故になる。
+    if (moved < DRAG_SLOP) {
+      const index = nodeAt(event);
+      setFocus(index !== null && index === state.focus ? null : index);
+    }
+    hoverAt(event);
+  }
+
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+
+  canvas.addEventListener("pointerleave", () => {
+    if (drag) return;
     state.hover = null;
     tooltip.style.opacity = "0";
     draw();
   });
 
-  canvas.addEventListener("click", (event) => {
-    const index = nodeAt(event);
-    setFocus(index !== null && index === state.focus ? null : index);
+  canvas.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    setPreset("all");
   });
 
   const clearButton = document.getElementById("clear");
@@ -770,23 +963,43 @@
 
   clearButton.addEventListener("click", () => setFocus(null));
 
-  // ---- 絞り込み ------------------------------------------------------------
+  // ---- 表示範囲 ------------------------------------------------------------
+  // 地域ボタンは絞り込みではなく視点の設定。県も流れも消さず、収まる位置へ寄せるだけ。
   const areaButtons = {
     all: document.getElementById("area-all"),
     east: document.getElementById("area-east"),
     west: document.getElementById("area-west"),
   };
+  const zoomValue = document.getElementById("zoom-value");
 
-  for (const [area, button] of Object.entries(areaButtons)) {
-    button.addEventListener("click", () => {
-      state.area = area;
-      for (const [key, other] of Object.entries(areaButtons)) {
-        other.setAttribute("aria-pressed", key === area ? "true" : "false");
-      }
-      if (state.focus !== null && !inArea(state.focus)) state.focus = null;
-      setFocus(state.focus);
-      relayout();
-    });
+  const presetIndices = {
+    all: Array.from({ length: N }, (_, index) => index),
+    east: Array.from({ length: EAST_END }, (_, index) => index),
+    west: Array.from({ length: N - EAST_END }, (_, index) => index + EAST_END),
+  };
+
+  function syncView() {
+    zoomValue.textContent = `${view.scale.toFixed(1)}倍`;
+    for (const [key, button] of Object.entries(areaButtons)) {
+      button.setAttribute("aria-pressed", key === state.preset ? "true" : "false");
+    }
+  }
+
+  function setPreset(name) {
+    state.preset = name;
+    if (name === "all") {
+      view.scale = 1;
+      view.tx = 0;
+      view.ty = 0;
+    } else {
+      fitTo(presetIndices[name]);
+    }
+    syncView();
+    draw();
+  }
+
+  for (const name of Object.keys(areaButtons)) {
+    areaButtons[name].addEventListener("click", () => setPreset(name));
   }
 
   const sizeButtons = {
@@ -852,9 +1065,8 @@
     if (state.hover !== null) {
       const bounds = canvas.getBoundingClientRect();
       const factor = bounds.width / WIDTH;
-      showTooltip(state.hover,
-        bounds.left + points[state.hover].x * factor,
-        bounds.top + points[state.hover].y * factor);
+      const point = screenOf(points[state.hover]);
+      showTooltip(state.hover, bounds.left + point.x * factor, bounds.top + point.y * factor);
     }
     draw();
   }
@@ -919,7 +1131,8 @@
 
   theme = readTheme();
   themeButton.textContent = `配色: ${theme.dark ? "暗" : "明"}`;
-  relayout();
+  syncView();
+  resize();
   setT(0);
 })();
 </script>
