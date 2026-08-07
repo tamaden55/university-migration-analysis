@@ -180,6 +180,15 @@
   const S = OD_DATA.schools;
   const P = OD_DATA.paths;
   const N = OD_DATA.prefectures.length;
+
+  // data.js が古いまま読まれると進路がない。白画面にせず、理由と直し方を出す。
+  // 配信済みの data.js はブラウザに残るので、更新の直後だけこの状態になりうる。
+  if (!P) {
+    document.getElementById("viz-chrome").innerHTML =
+      '<span class="note">データが古い可能性があります。'
+      + "スーパーリロード（Shift＋再読み込み）を試してください。</span>";
+    return;
+  }
   const SCHOOL_Y = OD_DATA.years.indexOf(S.year);
   if (SCHOOL_Y < 0) throw new Error("学校数の年度に対応する OD データがない");
 
