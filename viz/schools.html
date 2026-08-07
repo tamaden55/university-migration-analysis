@@ -42,6 +42,16 @@
   table.data th, table.data td { padding: 4px 8px 4px 0; }
   table.data tr.selected td { background-color: var(--gridline); }
 
+  /* 16列が横一列に並ぶと、どこまでが高校の話でどこからが大学の話か読めない。
+     上に束ねの見出しを置き、束の変わり目にだけ縦線を引く。線は境目だけに引く。
+     全部の列に引くと、数えるための格子になって束が見えなくなる。 */
+  table.data th.edge, table.data td.edge { border-left: 1px solid var(--border); padding-left: 8px; }
+  table.data tr.groups th {
+    font-size: 11px; font-weight: 400; color: var(--muted);
+    text-align: center; padding-bottom: 2px;
+  }
+  table.data tr.groups th[rowspan] { text-align: left; }
+
   /* 並び順の手掛かり。見出しで何順かを言い、数値の背後の帯で並びを形にする。 */
   table.data th.sorted { color: var(--text-primary); }
   table.data th.sorted::after { content: "▲"; font-size: 9px; margin-left: 3px; }
@@ -60,47 +70,13 @@
 <div class="wrap">
   <h1>高校と大学の設置数、そして流出</h1>
   <p class="lede">
-    都道府県ごとの高校数・大学数を設置者別に並べ、大学進学時の県外流出と突き合わせる。
-    学校数は2025年度（令和7年度）のみだが、散布図と表は高卒者の進路とあわせて
-    2015年度から11年ぶん動く。学校基本調査「都道府県別学校数」（高校）、
-    「都道府県別 学校数及び学生数」（大学）、「都道府県別 状況別卒業者数」（進路）による。
+    大学の受け皿の厚みと、高校を出た人の進路を、都道府県ごとに突き合わせる。
+    散布図と表は2015年度から11年ぶん動く。下段の高校数・大学数だけは2025年度（令和7年度）のみ。
+    学校基本調査「都道府県別 状況別卒業者数」（進路）、「都道府県別学校数」（高校）、
+    「都道府県別 学校数及び学生数」（大学）による。
   </p>
 
   <div id="viz-chrome"></div>
-
-  <div class="panel">
-    <div class="head">
-      <div>
-        <h2>都道府県別の大学数（設置者別）</h2>
-        <span class="lede" id="bars-note"></span>
-      </div>
-      <div class="segmented" role="group" aria-label="並び順">
-        <button type="button" id="sort-count" aria-pressed="true">大学数順</button>
-        <button type="button" id="sort-density" aria-pressed="false">高校100校あたり順</button>
-        <button type="button" id="sort-code" aria-pressed="false">北から順</button>
-      </div>
-    </div>
-
-    <div class="legend">
-      <span class="key"><span class="chip" style="background: var(--national)"></span>国立</span>
-      <span class="key"><span class="chip" style="background: var(--public)"></span>公立</span>
-      <span class="key"><span class="chip" style="background: var(--private)"></span>私立</span>
-    </div>
-
-    <table class="bars">
-      <thead>
-        <tr>
-          <th>都道府県</th>
-          <th>大学の設置者別内訳</th>
-          <th class="num">大学</th>
-          <th class="num">高校</th>
-          <th class="num">高校100校<br>あたり大学</th>
-          <th class="num">県外進学率</th>
-        </tr>
-      </thead>
-      <tbody id="bars-body"></tbody>
-    </table>
-  </div>
 
   <div class="panel">
     <div class="head">
@@ -142,21 +118,27 @@
       <summary>表で見る（全47都道府県・受け入れ倍率の低い順）</summary>
       <table class="data">
         <thead>
+          <tr class="groups">
+            <th rowspan="2">都道府県</th>
+            <th class="num edge" colspan="4">高校の設置者別</th>
+            <th class="num edge" colspan="4">大学の設置者別</th>
+            <th class="num edge" colspan="4">進学の出入り</th>
+            <th class="num edge" colspan="3">高校卒業後の進路</th>
+          </tr>
           <tr>
-            <th>都道府県</th>
-            <th class="num">高校</th>
+            <th class="num edge">計</th>
             <th class="num">国立</th>
             <th class="num">公立</th>
             <th class="num">私立</th>
-            <th class="num">大学</th>
+            <th class="num edge">計</th>
             <th class="num">国立</th>
             <th class="num">公立</th>
             <th class="num">私立</th>
-            <th class="num">受け入れ</th>
+            <th class="num edge">受け入れ</th>
             <th class="num">送り出し</th>
             <th class="num sorted" aria-sort="ascending">倍率</th>
             <th class="num">県外進学率</th>
-            <th class="num">高卒者</th>
+            <th class="num edge">高卒者</th>
             <th class="num">進学率</th>
             <th class="num">就職率</th>
           </tr>
@@ -164,6 +146,40 @@
         <tbody id="data-body"></tbody>
       </table>
     </details>
+  </div>
+
+  <div class="panel">
+    <div class="head">
+      <div>
+        <h2>都道府県別の大学数（設置者別）</h2>
+        <span class="lede" id="bars-note"></span>
+      </div>
+      <div class="segmented" role="group" aria-label="並び順">
+        <button type="button" id="sort-count" aria-pressed="true">大学数順</button>
+        <button type="button" id="sort-density" aria-pressed="false">高校100校あたり順</button>
+        <button type="button" id="sort-code" aria-pressed="false">北から順</button>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span class="key"><span class="chip" style="background: var(--national)"></span>国立</span>
+      <span class="key"><span class="chip" style="background: var(--public)"></span>公立</span>
+      <span class="key"><span class="chip" style="background: var(--private)"></span>私立</span>
+    </div>
+
+    <table class="bars">
+      <thead>
+        <tr>
+          <th>都道府県</th>
+          <th>大学の設置者別内訳</th>
+          <th class="num">大学</th>
+          <th class="num">高校</th>
+          <th class="num">高校100校<br>あたり大学</th>
+          <th class="num">県外進学率</th>
+        </tr>
+      </thead>
+      <tbody id="bars-body"></tbody>
+    </table>
   </div>
 
   <footer>
@@ -522,20 +538,20 @@
       .sort((a, b) => a.ratio - b.ratio)
       .map((item) => `<tr${item.index === state.selected ? ' class="selected"' : ""}>
         <td>${item.name}</td>
-        <td class="num">${item.highSchools}</td>
+        <td class="num edge">${item.highSchools}</td>
         <td class="num">${item.highNational}</td>
         <td class="num">${item.highPublic}</td>
         <td class="num">${item.highPrivate}</td>
-        <td class="num">${item.universities}</td>
+        <td class="num edge">${item.universities}</td>
         <td class="num">${item.univNational}</td>
         <td class="num">${item.univPublic}</td>
         <td class="num">${item.univPrivate}</td>
-        <td class="num">${format.count(item.intake)}</td>
+        <td class="num edge">${format.count(item.intake)}</td>
         <td class="num">${format.count(item.send)}</td>
         <td class="num sorted" style="--fill:${(item.ratio / widest * 100).toFixed(1)}%">${
           item.ratio.toFixed(2)}</td>
         <td class="num">${format.shareRough(item.outRate)}</td>
-        <td class="num">${format.count(item.graduates)}</td>
+        <td class="num edge">${format.count(item.graduates)}</td>
         <td class="num">${format.shareRough(item.advance)}</td>
         <td class="num">${format.shareRough(item.employed)}</td>
       </tr>`).join("");

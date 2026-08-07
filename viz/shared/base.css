@@ -61,12 +61,17 @@ h2 { font-size: 16px; margin: 0 0 4px; }
 .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 78ch; }
 
 /* ---- 共通ヘッダ ---------------------------------------------------------- */
+/* 上に貼り付ける。どのページも図がヘッダより下にあり、しかも縦に長い。
+   年を送った効果は図の側に出るので、スライダと図が同時に見えないと操作にならない。
+   地の色を敷いておかないと、下を通る内容が透ける。 */
 .chrome {
+  position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
   margin: 14px 0 18px; padding: 10px 12px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 10px;
+  box-shadow: 0 6px 16px -12px rgba(0, 0, 0, 0.55);
 }
 .tabs { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
 .tabs a {
