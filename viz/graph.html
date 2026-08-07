@@ -36,7 +36,7 @@
   <h1>大学進学の都道府県間フロー</h1>
   <p class="lede">
     ノードが都道府県、線が「出身高校の所在地 → 入学した大学の所在地」の流れ。
-    矢じりの向きが流れの向き、線の太さが人数、ノードの色が純流入（流入 − 流出）を表す。
+    矢じりの向きが流れの向き、線の太さと濃さが人数、ノードの色が純流入（流入 − 流出）を表す。
   </p>
 
   <div id="viz-chrome"></div>
@@ -89,7 +89,7 @@
         </span>
       </span>
       <span class="key">
-        <span class="line" style="background: var(--muted)"></span>県間の流れ
+        <span class="line" style="background: var(--muted)"></span>県間の流れ（太く濃いほど人数が多い）
       </span>
       <span class="key">矢じりの向きが流れの向き</span>
     </div>
@@ -344,7 +344,13 @@
   }
   candidates.sort((a, b) => b.peak - a.peak);
 
-  const edgeWidth = (movers) => 1 + 5.6 * Math.sqrt(movers / maxMovers);
+  const edgeWidth = (movers) => 0.9 + 6.0 * Math.sqrt(movers / maxMovers);
+  // 人数を太さだけに任せると伝わらない。平方根の尺度は差を圧縮するうえ、
+  // どんなに小さい流れにも最低幅があるので、細い線が本数で押し勝ってしまう。
+  // 濃さにも同じ量を載せて、小さい流れは背景へ沈める。
+  // べき乗（0.4）は純流入の配色と同じ考えで、中位の流れにも濃さを届かせるため。
+  // 定義域は太さと同じく全年度で固定する。年をまたいで濃さを比べられるようにする。
+  const edgeWeight = (movers) => Math.pow(Math.max(0, movers) / maxMovers, 0.4);
   // 送り出し（その県の高校から進学した人数）と受け入れ（その県の大学に入った人数）を
   // 切り替える。定義域はモードごとに全年度で固定する。
   // 密集はズームで解くので、等倍時の大きさは重なりぎりぎりまで上げてある。
@@ -513,12 +519,15 @@
     const width = edgeWidth(edge.movers) * mark;
 
     // 選択中の県、なければカーソルの下の県を基準に、流出と流入を塗り分ける。
+    // 濃さは人数で決める。ここを一律にすると、30人の流れが2万人の流れと同じ顔で並び、
+    // 本数の釣り合いだけが見えて量の偏りが消える。
+    const weight = edgeWeight(edge.movers);
     const anchor = state.focus !== null ? state.focus : state.hover;
     let color = theme.secondary;
-    let alpha = anchor === null ? 0.42 : 0.12;
+    let alpha = anchor === null ? 0.13 + 0.52 * weight : 0.05 + 0.10 * weight;
     if (anchor !== null && (edge.i === anchor || edge.j === anchor)) {
       color = edge.i === anchor ? theme.poleOut : theme.poleIn;
-      alpha = 0.85;
+      alpha = 0.22 + 0.72 * weight;
     }
 
     // 終点はノードの縁で止め、その先を矢じりにあてる。
