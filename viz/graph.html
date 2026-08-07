@@ -35,8 +35,8 @@
 <div class="wrap">
   <h1>大学進学の都道府県間フロー</h1>
   <p class="lede">
-    ノードが都道府県、矢印が「出身高校の所在地 → 入学した大学の所在地」の流れ。
-    矢印は出発する県の側が太く、向かう先へ細くなる。太さが人数、ノードの色が純流入（流入 − 流出）を表す。
+    ノードが都道府県、線が「出身高校の所在地 → 入学した大学の所在地」の流れ。
+    矢じりの向きが流れの向き、線の太さが人数、ノードの色が純流入（流入 − 流出）を表す。
   </p>
 
   <div id="viz-chrome"></div>
@@ -88,15 +88,10 @@
           <span class="ends"><span>流出超過</span><span>流入超過</span></span>
         </span>
       </span>
-      <span class="key" id="key-plain">
+      <span class="key">
         <span class="line" style="background: var(--muted)"></span>県間の流れ
       </span>
-      <span class="key" hidden id="key-out">
-        <span class="line" style="background: var(--pole-out)"></span>選択県からの流出
-      </span>
-      <span class="key" hidden id="key-in">
-        <span class="line" style="background: var(--pole-in)"></span>選択県への流入
-      </span>
+      <span class="key">矢じりの向きが流れの向き</span>
     </div>
 
     <details>
@@ -484,10 +479,12 @@
     };
   }
 
-  // 線は起点側が太く、行き先へ細くなる帯として描く。矢じりだけに向きを頼らせない。
-  const TAPER_STEPS = 18;
-  const TAPER_END = 0.24;
-  const MID_ARROW_SPAN = 150;   // これより長い流れには途中にも矢じりを置く
+  // 向きは矢じりだけで語らせる。以前は起点側を太く終点側を細くする帯で描いていたが、
+  // 幅の変化は曲線の全長にわたって少しずつ効くので、目では追えなかった。
+  // 線は一定幅にして（太さは人数のまま）、そのぶん矢じりを大きく、数を増やす。
+  const ARROW_MIN = 10;         // 細い線でも向きが読める大きさ
+  const ARROW_SPACING = 190;    // 途中の矢じりを置く間隔の目安
+  const ARROW_MAX_MID = 3;
 
   // 曲線上の t の位置に、進行方向を向いた矢じりを1つ塗る。
   function drawArrow(from, control, to, t, size) {
@@ -496,8 +493,8 @@
     const angle = Math.atan2(slope.y, slope.x);
     ctx.beginPath();
     ctx.moveTo(tip.x, tip.y);
-    ctx.lineTo(tip.x - size * Math.cos(angle - 0.38), tip.y - size * Math.sin(angle - 0.38));
-    ctx.lineTo(tip.x - size * Math.cos(angle + 0.38), tip.y - size * Math.sin(angle + 0.38));
+    ctx.lineTo(tip.x - size * Math.cos(angle - 0.42), tip.y - size * Math.sin(angle - 0.42));
+    ctx.lineTo(tip.x - size * Math.cos(angle + 0.42), tip.y - size * Math.sin(angle + 0.42));
     ctx.closePath();
     ctx.fill();
   }
@@ -527,37 +524,33 @@
     // 終点はノードの縁で止め、その先を矢じりにあてる。
     const radius = nodeRadius(sizeAt(edge.j)) * mark;
     const span = Math.hypot(to.x - from.x, to.y - from.y) || 1;
-    const head = Math.max(6.5 * mark, width * 1.9);
+    const head = Math.max(ARROW_MIN * mark, width * 2.1);
     const tipAt = Math.max(0.05, 1 - (radius + 1) / span);
-    const endAt = Math.max(0.02, tipAt - head / span);
+    const endAt = Math.max(0.02, tipAt - head * 0.7 / span);
 
-    const left = [];
-    const right = [];
-    for (let step = 0; step <= TAPER_STEPS; step += 1) {
-      const t = endAt * step / TAPER_STEPS;
-      const point = pointOnCurve(from, control, to, t);
-      const slope = tangent(from, control, to, t);
-      const length = Math.hypot(slope.x, slope.y) || 1;
-      const half = width * (1 - (1 - TAPER_END) * (step / TAPER_STEPS)) / 2;
-      const nx = -slope.y / length * half;
-      const ny = slope.x / length * half;
-      left.push({ x: point.x + nx, y: point.y + ny });
-      right.push({ x: point.x - nx, y: point.y - ny });
-    }
+    // 二次ベジエを endAt で切って前半だけ描く（de Casteljau）。
+    const stopAt = pointOnCurve(from, control, to, endAt);
+    const bend = {
+      x: from.x + (control.x - from.x) * endAt,
+      y: from.y + (control.y - from.y) * endAt,
+    };
+    ctx.strokeStyle = VIZ.theme.withAlpha(color, alpha);
+    ctx.lineWidth = width;
+    ctx.lineCap = "butt";
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.quadraticCurveTo(bend.x, bend.y, stopAt.x, stopAt.y);
+    ctx.stroke();
 
     ctx.fillStyle = VIZ.theme.withAlpha(color, alpha);
-    ctx.beginPath();
-    ctx.moveTo(left[0].x, left[0].y);
-    for (const point of left.slice(1)) ctx.lineTo(point.x, point.y);
-    for (let index = right.length - 1; index >= 0; index -= 1) {
-      ctx.lineTo(right[index].x, right[index].y);
-    }
-    ctx.closePath();
-    ctx.fill();
-
     drawArrow(from, control, to, tipAt, head);
-    // 長い流れは終点の矢じりが束に埋もれる。帯の途中にもう1つ置いて向きを補う。
-    if (span > MID_ARROW_SPAN) drawArrow(from, control, to, tipAt * 0.7, head * 0.78);
+
+    // 長い流れは終点の矢じりが束に埋もれる。途中にも等間隔で置いて、
+    // 画面の端で切れている流れでも向きが読めるようにする。
+    const mids = Math.min(ARROW_MAX_MID, Math.floor(span / ARROW_SPACING));
+    for (let step = 1; step <= mids; step += 1) {
+      drawArrow(from, control, to, tipAt * step / (mids + 1), head * 0.82);
+    }
   }
 
   function drawNode(index, screen, mark, dim) {
@@ -701,6 +694,63 @@
     draw();
   }
 
+  // 色の意味を図の外に置くと、線を見るたび凡例へ視線を往復させることになる。
+  // 選択した県のすぐ横に、その県から見た向きと色を書く。
+  function drawFocusKey(screen, mark) {
+    if (state.focus === null) return;
+    const point = screen[state.focus];
+    const radius = nodeRadius(sizeAt(state.focus)) * mark;
+    const name = format.short(state.focus);
+
+    ctx.font = "11px system-ui, -apple-system, 'Hiragino Sans', sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+
+    const GLYPH = 18;
+    const GAP = 6;
+    const rows = [
+      { color: theme.poleOut, text: `${name}から`, away: true },
+      { color: theme.poleIn, text: `${name}へ`, away: false },
+    ];
+    const textWidth = Math.max(...rows.map((row) => ctx.measureText(row.text).width));
+    const plate = { w: GLYPH + GAP + textWidth + 16, h: 38 };
+    const flip = point.x + radius + plate.w + 8 > WIDTH;
+    const left = flip ? point.x - radius - 6 - plate.w : point.x + radius + 6;
+    const top = point.y + 8;
+
+    ctx.fillStyle = VIZ.theme.withAlpha(theme.surface, 0.92);
+    ctx.fillRect(left, top, plate.w, plate.h);
+    ctx.strokeStyle = theme.axis;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(left + 0.5, top + 0.5, plate.w - 1, plate.h - 1);
+
+    rows.forEach((row, index) => {
+      const y = top + 12 + index * 15;
+      const x = left + 8;
+      // 矢印は選択県から見た向き。流出は県から離れる側、流入は県へ向かう側を指す。
+      const toward = flip ? 1 : -1;
+      const direction = row.away ? -toward : toward;
+      ctx.strokeStyle = row.color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + GLYPH, y);
+      ctx.stroke();
+
+      const tip = direction > 0 ? x + GLYPH : x;
+      ctx.fillStyle = row.color;
+      ctx.beginPath();
+      ctx.moveTo(tip + direction * 5, y);
+      ctx.lineTo(tip - direction * 2.5, y - 4);
+      ctx.lineTo(tip - direction * 2.5, y + 4);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = theme.text;
+      ctx.fillText(row.text, x + GLYPH + GAP + 5, y);
+    });
+  }
+
   function draw() {
     ctx.fillStyle = theme.surface;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
@@ -733,6 +783,7 @@
     const priority = order.filter((index) =>
       state.focus === null || touched.has(index) || index === state.focus);
     drawLabels(priority, forced, screen, mark);
+    drawFocusKey(screen, mark);
     drawOverview();
 
     renderTable(edges);
@@ -923,18 +974,10 @@
   });
 
   const clearButton = document.getElementById("clear");
-  const keys = {
-    plain: document.getElementById("key-plain"),
-    out: document.getElementById("key-out"),
-    in: document.getElementById("key-in"),
-  };
 
   function setFocus(index) {
     state.focus = index;
     clearButton.disabled = index === null;
-    keys.plain.hidden = index !== null;
-    keys.out.hidden = index === null;
-    keys.in.hidden = index === null;
     VIZ.state.patch({ pref: index === null ? null : format.toJis(index) });
     draw();
   }
