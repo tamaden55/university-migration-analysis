@@ -114,7 +114,10 @@
     ノードの位置は県庁所在地のおおよその座標である。沖縄県だけは九州の南西に寄せて描いている。
     表示範囲のボタンは、その地域が収まる位置へ視点を移すだけで、県や流れを絞り込みはしない。
     範囲外へ向かう流れも切れずに描かれる。
-    県を選ぶと、しきい値を無視してその県のすべての流れを出す。年をまたぐ動きは太さと色の補間で見せているが、
+    県を選ぶと、しきい値を無視してその県のすべての流れを出し、その県の横に流入・流出の量を棒で出す。
+    棒の目盛りは全年度・全県を通じた1県の最大（東京の流入）を満杯としており、県が変わっても伸び縮みしない。
+    隣り合う県どうしの線は、点の間が数pxしかなく太さを見せる場所がないため、近い相手ほど大きく膨らませて描く。
+    年をまたぐ動きは太さと色の補間で見せているが、
     数値は常に最寄りの年度の実数である。「その他」（海外・不明の高校出身）は除外している。
   </footer>
 </div>
@@ -318,12 +321,14 @@
   let maxEntrants = 0;
   let maxCapacity = 0;
   let maxNet = 0;
+  let maxSide = 0;   // 1県の流入・流出の全国最大。選択県の量を測る物差しに使う
   for (let y = 0; y < YEARS.length; y += 1) {
     for (let i = 0; i < N; i += 1) {
       const entrants = OD_DATA.local[y][i] + OD_DATA.outbound[y][i];
       if (entrants > maxEntrants) maxEntrants = entrants;
       if (OD_DATA.capacity.total[y][i] > maxCapacity) maxCapacity = OD_DATA.capacity.total[y][i];
       maxNet = Math.max(maxNet, Math.abs(OD_DATA.netInflow[y][i]));
+      maxSide = Math.max(maxSide, OD_DATA.inbound[y][i], OD_DATA.outbound[y][i]);
       for (let j = 0; j < N; j += 1) {
         if (i !== j && OD_DATA.matrix[y][i][j] > maxMovers) maxMovers = OD_DATA.matrix[y][i][j];
       }
@@ -461,13 +466,40 @@
   }
 
   // 制御点を中点から垂直にずらす。向きを固定するので A→B と B→A が重ならない。
+  //
+  // ずらす量を距離に対する一定比にすると、隣り合う県の間が数pxしか空かない。
+  // 東京から見た神奈川・埼玉・千葉は流入の最上位なのに、線がノードの内側に埋もれて
+  // 太さを見せる場所がなかった。近い相手ほど大きく膨らませ、線が姿を現す場所を作る。
+  const BOW_RATIO = 0.11;
+  const BOW_FLOOR = 52;   // 画面上でこれだけは横へ張り出させる
+
   function controlPoint(a, b) {
     const dx = b.x - a.x;
     const dy = b.y - a.y;
+    const distance = Math.hypot(dx, dy) || 1;
+    const bow = Math.max(BOW_RATIO, BOW_FLOOR * markScale() / distance);
     return {
-      x: (a.x + b.x) / 2 + dy * 0.11,
-      y: (a.y + b.y) / 2 - dx * 0.11,
+      x: (a.x + b.x) / 2 + dy * bow,
+      y: (a.y + b.y) / 2 - dx * bow,
     };
+  }
+
+  // 曲線上の速さ。t のわずかな変化が画面上で何px動くかを表す。
+  // 弦の長さで代用すると、大きく膨らんだ短い辺で矢じりの位置が破綻する。
+  function speedAt(a, c, b, t) {
+    const slope = tangent(a, c, b, t);
+    return Math.hypot(slope.x, slope.y) || 1;
+  }
+
+  // 終点の円に触れる手前の t を、曲線に沿って後ろから探す。
+  function edgeOfNode(a, c, b, radius) {
+    let t = 1;
+    for (let step = 0; step < 26; step += 1) {
+      const point = pointOnCurve(a, c, b, t);
+      if (Math.hypot(point.x - b.x, point.y - b.y) >= radius) break;
+      t -= 0.02;
+    }
+    return Math.max(0.08, t);
   }
 
   function pointOnCurve(a, c, b, t) {
@@ -532,10 +564,13 @@
 
     // 終点はノードの縁で止め、その先を矢じりにあてる。
     const radius = nodeRadius(sizeAt(edge.j)) * mark;
-    const span = Math.hypot(to.x - from.x, to.y - from.y) || 1;
     const head = Math.max(ARROW_MIN * mark, width * 2.1);
-    const tipAt = Math.max(0.05, 1 - (radius + 1) / span);
-    const endAt = Math.max(0.02, tipAt - head * 0.7 / span);
+    const tipAt = edgeOfNode(from, control, to, radius + 1);
+    const endAt = Math.max(0.02, tipAt - head * 0.7 / speedAt(from, control, to, tipAt));
+    // 曲線の長さ。膨らませた短い辺では弦とかけ離れるので、3点の速さから見積もる。
+    const span = (speedAt(from, control, to, 0)
+      + 4 * speedAt(from, control, to, 0.5)
+      + speedAt(from, control, to, 1)) / 6;
 
     // 二次ベジエを endAt で切って前半だけ描く（de Casteljau）。
     const stopAt = pointOnCurve(from, control, to, endAt);
@@ -705,37 +740,58 @@
 
   // 色の意味を図の外に置くと、線を見るたび凡例へ視線を往復させることになる。
   // 選択した県のすぐ横に、その県から見た向きと色を書く。
+  //
+  // 同じ行に量の物差しも置く。地図の線は「太さ×長さ」でインクの量が決まるので、
+  // 長さが地理に固定されている以上、量は線だけでは伝わらない。神奈川から東京への
+  // 21,550人は線の長さが15pxしかなく、北海道からの2,700人は450pxある。
+  // 棒は全年度・全県を通じた1県の最大（東京の流入）を満杯とする共通の目盛りで引く。
+  // 東京を選べば満杯近くまで伸び、他県を選べば同じ棒がわずかしか伸びない。
+  const BAR_WIDTH = 76;
+
   function drawFocusKey(screen, mark) {
     if (state.focus === null) return;
-    const point = screen[state.focus];
-    const radius = nodeRadius(sizeAt(state.focus)) * mark;
-    const name = format.short(state.focus);
+    const index = state.focus;
+    const point = screen[index];
+    const radius = nodeRadius(sizeAt(index)) * mark;
+    const name = format.short(index);
+    const year = VIZ.chrome.yearIndex();
 
     ctx.font = "11px system-ui, -apple-system, 'Hiragino Sans', sans-serif";
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
 
     const GLYPH = 18;
-    const GAP = 6;
+    const GAP = 7;
     const rows = [
-      { color: theme.poleOut, text: `${name}から`, away: true },
-      { color: theme.poleIn, text: `${name}へ`, away: false },
+      {
+        color: theme.poleIn, text: `${name}へ`, away: false,
+        value: OD_DATA.inbound[year][index],
+      },
+      {
+        color: theme.poleOut, text: `${name}から`, away: true,
+        value: OD_DATA.outbound[year][index],
+      },
     ];
-    const textWidth = Math.max(...rows.map((row) => ctx.measureText(row.text).width));
-    const plate = { w: GLYPH + GAP + textWidth + 16, h: 38 };
+    const labelWidth = Math.max(...rows.map((row) => ctx.measureText(row.text).width));
+    const numberWidth = Math.max(...rows.map((row) => ctx.measureText(format.count(row.value)).width));
+    const plate = {
+      w: 10 + GLYPH + GAP + labelWidth + GAP + BAR_WIDTH + GAP + numberWidth + 10,
+      h: 40,
+    };
     const flip = point.x + radius + plate.w + 8 > WIDTH;
-    const left = flip ? point.x - radius - 6 - plate.w : point.x + radius + 6;
-    const top = point.y + 8;
+    const left = Math.max(4, flip ? point.x - radius - 6 - plate.w : point.x + radius + 6);
+    const top = Math.min(HEIGHT - plate.h - 4, point.y + 8);
 
-    ctx.fillStyle = VIZ.theme.withAlpha(theme.surface, 0.92);
+    ctx.fillStyle = VIZ.theme.withAlpha(theme.surface, 0.93);
     ctx.fillRect(left, top, plate.w, plate.h);
     ctx.strokeStyle = theme.axis;
     ctx.lineWidth = 1;
     ctx.strokeRect(left + 0.5, top + 0.5, plate.w - 1, plate.h - 1);
 
-    rows.forEach((row, index) => {
-      const y = top + 12 + index * 15;
-      const x = left + 8;
+    rows.forEach((row, order) => {
+      const y = top + 13 + order * 15;
+      const x = left + 10;
+
       // 矢印は選択県から見た向き。流出は県から離れる側、流入は県へ向かう側を指す。
       const toward = flip ? 1 : -1;
       const direction = row.away ? -toward : toward;
@@ -756,7 +812,17 @@
       ctx.fill();
 
       ctx.fillStyle = theme.text;
-      ctx.fillText(row.text, x + GLYPH + GAP + 5, y);
+      ctx.fillText(row.text, x + GLYPH + GAP, y);
+
+      // 目盛りの器を薄く出す。空に近い棒でも「満杯までの距離」が読める。
+      const barX = x + GLYPH + GAP + labelWidth + GAP;
+      ctx.fillStyle = VIZ.theme.withAlpha(theme.axis, 0.35);
+      ctx.fillRect(barX, y - 4, BAR_WIDTH, 8);
+      ctx.fillStyle = row.color;
+      ctx.fillRect(barX, y - 4, Math.max(1, BAR_WIDTH * row.value / maxSide), 8);
+
+      ctx.fillStyle = theme.secondary;
+      ctx.fillText(format.count(row.value), barX + BAR_WIDTH + GAP, y);
     });
   }
 
