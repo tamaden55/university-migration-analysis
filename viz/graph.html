@@ -97,18 +97,8 @@
     </div>
 
     <details>
-      <summary>表で見る（表示中の流れ、上位30件）</summary>
-      <table>
-        <thead>
-          <tr>
-            <th>出身高校の所在地</th>
-            <th>大学の所在地</th>
-            <th class="num">入学者数</th>
-            <th class="num">流出構成比</th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
+      <summary id="table-summary">表で見る（表示中の流れ）</summary>
+      <div id="table-host"></div>
     </details>
   </div>
 
@@ -129,6 +119,7 @@
 <script src="shared/format.js"></script>
 <script src="shared/state.js"></script>
 <script src="shared/chrome.js"></script>
+<script src="shared/flowtable.js"></script>
 <script>
 (() => {
   "use strict";
@@ -1193,25 +1184,31 @@
   thresholdInput.addEventListener("change", () => setThreshold(Number(thresholdInput.value)));
 
   // ---- 表 ------------------------------------------------------------------
-  const tableBody = document.getElementById("table-body");
+  const tableHost = document.getElementById("table-host");
+  const tableSummary = document.getElementById("table-summary");
+
+  // draw() は指を動かすたびに走る。表の中身が変わるのは年度・注目県・流れの母集団が
+  // 動いたときだけなので、そこが同じ間は組み直さない。
+  // しきい値は下げると流れが増えるだけなので、本数が同じなら同じ集合とみなせる。
+  let tableKey = "";
 
   function renderTable(edges) {
     const year = VIZ.chrome.yearIndex();
-    const rows = edges
-      .map((edge) => ({
-        i: edge.i,
-        j: edge.j,
-        movers: OD_DATA.matrix[year][edge.i][edge.j],
-        outbound: OD_DATA.outbound[year][edge.i],
-      }))
-      .sort((a, b) => b.movers - a.movers)
-      .slice(0, 30);
-    tableBody.innerHTML = rows.map((row) => `<tr>
-        <td>${format.name(row.i)}</td>
-        <td>${format.name(row.j)}</td>
-        <td class="num">${format.count(row.movers)}</td>
-        <td class="num">${row.outbound ? format.share(row.movers / row.outbound) : "–"}</td>
-      </tr>`).join("");
+    // 県を選んでいるときの中身は流れの母集団に依らない。再生中の補間で本数だけが
+    // 揺れても組み直さないよう、その場合は本数を鍵に入れない。
+    const key = state.focus === null ? `${year}|-|${edges.length}` : `${year}|${state.focus}`;
+    if (key === tableKey) return;
+    tableKey = key;
+
+    tableSummary.textContent =
+      VIZ.flowtable.summaryText(state.focus, "表で見る（表示中の流れ）");
+    VIZ.flowtable.render(tableHost, {
+      year,
+      focus: state.focus,
+      flows: edges,
+      limit: state.focus === null ? 30 : 20,
+      lead: `しきい値 ${format.count(state.threshold)} 人以上の流れ。`,
+    });
   }
 
   // ---- 起動 ----------------------------------------------------------------
