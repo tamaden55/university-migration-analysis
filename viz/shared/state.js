@@ -29,7 +29,7 @@ VIZ.state = (() => {
     threshold: { def: 500, parse: integer(200, 5000) },
     size: { def: "send", parse: oneOf(["send", "take"]) },
     sort: { def: "count", parse: oneOf(["count", "density", "code"]) },
-    axis: { def: "ratio", parse: oneOf(["ratio", "density"]) },
+    axis: { def: "ratio", parse: oneOf(["ratio", "density", "advance"]) },
   };
 
   // ハッシュに実際に書かれていたキー。既定値と「書かれていない」を区別するために要る。
