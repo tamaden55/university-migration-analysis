@@ -103,7 +103,10 @@
   </div>
 
   <footer>
-    ノードの位置は県庁所在地のおおよその座標である。沖縄県だけは九州の南西に寄せて描いている。
+    ノードの位置は県庁所在地のおおよその座標である。沖縄県だけは九州の南西に寄せてあり、
+    下敷きの地図も同じだけ動かして破線の枠で囲ってある。枠の中だけ位置が実際と異なる。
+    地図は都道府県の境界（<a href="https://github.com/dataofjapan/land">dataofjapan/land</a>）を
+    間引いたもので、遠い島（北方領土・小笠原・大東・先島・奄美）は図が縮むため描いていない。
     表示範囲のボタンは、その地域が収まる位置へ視点を移すだけで、県や流れを絞り込みはしない。
     範囲外へ向かう流れも切れずに描かれる。
     県を選ぶと、しきい値を無視してその県のすべての流れを出し、その県の横に流入・流出の量を棒で出す。
@@ -115,6 +118,7 @@
 </div>
 
 <script src="data.js"></script>
+<script src="japan.js"></script>
 <script src="shared/theme.js"></script>
 <script src="shared/format.js"></script>
 <script src="shared/state.js"></script>
@@ -146,6 +150,29 @@
     [33.25, 130.30], [32.74, 129.87], [32.79, 130.74], [33.24, 131.61], [31.91, 131.42],
     [31.56, 130.56], [30.70, 128.20],
   ];
+
+  // ---- 下敷きの地図 --------------------------------------------------------
+  // ノードの位置関係だけでは、どこを見ているのかが読めない。県の輪郭を薄く敷く。
+  //
+  // 沖縄のノードは実際の那覇より北西へ寄せてある（実位置に置くと図が縦に伸びて
+  // 本土が潰れる）。地図だけ実位置に描くとノードが海に浮くので、地図も同じだけ
+  // ずらし、入れ図として枠で囲う。ずらす量は COORDS が決めているのでここで持つ。
+  const NAHA = [26.21, 127.68];
+  const OKINAWA = OD_DATA.prefectures.indexOf("沖縄県");
+  const OKINAWA_SHIFT = [COORDS[OKINAWA][0] - NAHA[0], COORDS[OKINAWA][1] - NAHA[1]];
+
+  const MAP_RINGS = [];
+  const INSET_RINGS = [];
+  for (const prefecture of JAPAN_MAP.prefectures) {
+    const inset = prefecture.name === "沖縄県";
+    const [dLat, dLon] = inset ? OKINAWA_SHIFT : [0, 0];
+    for (const flat of prefecture.rings) {
+      const ring = [];
+      for (let k = 0; k < flat.length; k += 2) ring.push([flat[k] + dLat, flat[k + 1] + dLon]);
+      MAP_RINGS.push(ring);
+      if (inset) INSET_RINGS.push(ring);
+    }
+  }
 
   // 東日本 = 北海道〜愛知、西日本 = 三重〜沖縄。中部と近畿の境で切っている。
   const EAST_END = OD_DATA.prefectures.indexOf("三重県");
@@ -182,8 +209,10 @@
   // 全国の外接範囲に合わせた1本きり。地域を絞る操作は投影ではなく後段のズームで表す。
   // 枠の大きさが変わったら組み直すが、緯度経度と world 座標の対応は proj が持つので、
   // 組み直しても「いまどこを見ていたか」を地理の側で引き継げる。
-  const LATS = COORDS.map(([lat]) => lat);
-  const LONS = COORDS.map(([, lon]) => lon);
+  // 範囲は地図まで含めて取る。ノードだけで決めると北海道の北半分が枠の外に出る。
+  // そのぶん等倍の図は縮むが、切れた海岸線より読みにくいものはない。
+  const LATS = COORDS.map(([lat]) => lat).concat(MAP_RINGS.flatMap((r) => r.map(([lat]) => lat)));
+  const LONS = COORDS.map(([, lon]) => lon).concat(MAP_RINGS.flatMap((r) => r.map(([, lon]) => lon)));
   const LAT_RANGE = [Math.min(...LATS), Math.max(...LATS)];
   const LON_RANGE = [Math.min(...LONS), Math.max(...LONS)];
   const SHRINK = Math.cos((LAT_RANGE[0] + LAT_RANGE[1]) / 2 * Math.PI / 180);
@@ -192,6 +221,8 @@
 
   let proj = null;
   let points = [];
+  let mapPaths = [];
+  let insetBox = null;
 
   function project() {
     const scale = Math.min((WIDTH - PAD * 2) / SPAN_X, (HEIGHT - PAD * 2) / SPAN_Y);
@@ -201,6 +232,19 @@
       offsetY: (HEIGHT - SPAN_Y * scale) / 2,
     };
     points = COORDS.map(([lat, lon]) => geoToWorld(lat, lon));
+    // 輪郭も world 座標にしておく。描画のたびに緯度経度から起こす必要はない。
+    mapPaths = MAP_RINGS.map((ring) => ring.map(([lat, lon]) => geoToWorld(lat, lon)));
+
+    const inset = INSET_RINGS.flat().map(([lat, lon]) => geoToWorld(lat, lon));
+    const xs = inset.map((point) => point.x);
+    const ys = inset.map((point) => point.y);
+    const margin = 10;
+    insetBox = {
+      x: Math.min(...xs) - margin,
+      y: Math.min(...ys) - margin,
+      w: Math.max(...xs) - Math.min(...xs) + margin * 2,
+      h: Math.max(...ys) - Math.min(...ys) + margin * 2,
+    };
   }
 
   const geoToWorld = (lat, lon) => ({
@@ -699,6 +743,20 @@
     ctx.lineWidth = 1;
     ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
 
+    // 現在地を知る場所なので、県境までは要らない。国の形が分かるだけの輪郭を敷く。
+    ctx.beginPath();
+    for (const ring of mapPaths) {
+      for (let k2 = 0; k2 < ring.length; k2 += 1) {
+        const x = box.x + ring[k2].x * k;
+        const y = box.y + ring[k2].y * k;
+        if (k2 === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    }
+    ctx.fillStyle = VIZ.theme.blend(theme.surface, theme.text, theme.dark ? 0.14 : 0.09);
+    ctx.fill();
+
     // ここは数値を読む場所ではなく現在地を知る場所なので、県は向きが分かる点に留める。
     for (let index = 0; index < N; index += 1) {
       const chosen = index === state.focus;
@@ -834,9 +892,45 @@
     });
   }
 
+  // 下敷きなので、流れと競合しない濃さに留める。地の色から文字色へわずかに寄せるだけ。
+  // 陸と海の差より、県境が読めることのほうが位置の手掛かりになる。
+  function drawMap() {
+    const mark = markScale();
+    ctx.beginPath();
+    for (const ring of mapPaths) {
+      for (let k = 0; k < ring.length; k += 1) {
+        const point = screenOf(ring[k]);
+        if (k === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      }
+      ctx.closePath();
+    }
+    ctx.fillStyle = VIZ.theme.blend(theme.surface, theme.text, theme.dark ? 0.10 : 0.06);
+    ctx.fill();
+    // 細い島は面が出ないので、読めるかどうかは線の側で決まる。下限を置く。
+    ctx.lineWidth = Math.max(0.9, Math.min(1.6, 0.9 * mark));
+    ctx.strokeStyle = VIZ.theme.blend(theme.surface, theme.text, theme.dark ? 0.30 : 0.24);
+    ctx.stroke();
+
+    // 沖縄は実際の位置ではない。枠で囲って、地図の続きではないことを見せる。
+    const box = {
+      x: insetBox.x * view.scale + view.tx,
+      y: insetBox.y * view.scale + view.ty,
+      w: insetBox.w * view.scale,
+      h: insetBox.h * view.scale,
+    };
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = VIZ.theme.blend(theme.surface, theme.text, theme.dark ? 0.26 : 0.2);
+    ctx.strokeRect(box.x, box.y, box.w, box.h);
+    ctx.restore();
+  }
+
   function draw() {
     ctx.fillStyle = theme.surface;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    drawMap();
 
     const screen = points.map(screenOf);
     const mark = markScale();

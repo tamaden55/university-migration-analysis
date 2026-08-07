@@ -40,7 +40,28 @@
   .finding strong { color: var(--text-primary); }
 
   table.data th, table.data td { padding: 4px 8px 4px 0; }
-  table.data tr.selected td { background: var(--gridline); }
+  table.data tr.selected td { background-color: var(--gridline); }
+
+  /* 16列が横一列に並ぶと、どこまでが高校の話でどこからが大学の話か読めない。
+     上に束ねの見出しを置き、束の変わり目にだけ縦線を引く。線は境目だけに引く。
+     全部の列に引くと、数えるための格子になって束が見えなくなる。 */
+  table.data th.edge, table.data td.edge { border-left: 1px solid var(--border); padding-left: 8px; }
+  table.data tr.groups th {
+    font-size: 11px; font-weight: 400; color: var(--muted);
+    text-align: center; padding-bottom: 2px;
+  }
+  table.data tr.groups th[rowspan] { text-align: left; }
+
+  /* 並び順の手掛かり。見出しで何順かを言い、数値の背後の帯で並びを形にする。 */
+  table.data th.sorted { color: var(--text-primary); }
+  table.data th.sorted::after { content: "▲"; font-size: 9px; margin-left: 3px; }
+  table.data td.sorted {
+    color: var(--text-primary);
+    padding-right: 8px;
+    background-image: linear-gradient(to right,
+      var(--gridline) 0 var(--fill), transparent var(--fill));
+    background-repeat: no-repeat;
+  }
 
   footer { margin-top: 8px; }
 </style>
@@ -49,12 +70,83 @@
 <div class="wrap">
   <h1>高校と大学の設置数、そして流出</h1>
   <p class="lede">
-    2025年度（令和7年度）の断面。都道府県ごとの高校数・大学数を設置者別に並べ、
-    大学進学時の県外流出と突き合わせる。学校数は学校基本調査「都道府県別学校数」（高校）と
+    大学の受け皿の厚みと、高校を出た人の進路を、都道府県ごとに突き合わせる。
+    散布図と表は2015年度から11年ぶん動く。下段の高校数・大学数だけは2025年度（令和7年度）のみ。
+    学校基本調査「都道府県別 状況別卒業者数」（進路）、「都道府県別学校数」（高校）、
     「都道府県別 学校数及び学生数」（大学）による。
   </p>
 
   <div id="viz-chrome"></div>
+
+  <div class="panel">
+    <div class="head">
+      <div>
+        <h2>受け皿の厚みと県外流出</h2>
+        <span class="lede" id="year-note"></span>
+      </div>
+      <div class="segmented" role="group" aria-label="横軸">
+        <button type="button" id="x-ratio" aria-pressed="true">受け入れ倍率</button>
+        <button type="button" id="x-density" aria-pressed="false">高校100校あたり大学数</button>
+        <button type="button" id="x-advance" aria-pressed="false">大学等進学率</button>
+      </div>
+    </div>
+
+    <p class="hints">
+      <span>円にカーソルを合わせると内訳</span>
+      <span>クリックでその県を選択</span>
+      <span>選んだ県はヒートマップ・フロー図のタブへ引き継ぐ</span>
+    </p>
+
+    <div class="scatter">
+      <svg id="plot" viewBox="0 0 720 460" role="img" aria-label="受け皿の厚みと県外進学率の散布図"></svg>
+      <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="legend">
+      <span class="key">
+        <span>純流入</span>
+        <span class="chip" style="background: var(--pole-out)"></span>流出超過
+        <span class="chip" style="background: var(--pole-in)"></span>流入超過
+      </span>
+      <span class="key">円の大きさ: 高校卒業者数</span>
+      <button type="button" class="button push-right" id="clear" disabled>選択を解除</button>
+    </div>
+
+    <p class="finding" id="finding"></p>
+
+    <details>
+      <summary>表で見る（全47都道府県・受け入れ倍率の低い順）</summary>
+      <table class="data">
+        <thead>
+          <tr class="groups">
+            <th rowspan="2">都道府県</th>
+            <th class="num edge" colspan="4">高校の設置者別</th>
+            <th class="num edge" colspan="4">大学の設置者別</th>
+            <th class="num edge" colspan="4">進学の出入り</th>
+            <th class="num edge" colspan="3">高校卒業後の進路</th>
+          </tr>
+          <tr>
+            <th class="num edge">計</th>
+            <th class="num">国立</th>
+            <th class="num">公立</th>
+            <th class="num">私立</th>
+            <th class="num edge">計</th>
+            <th class="num">国立</th>
+            <th class="num">公立</th>
+            <th class="num">私立</th>
+            <th class="num edge">受け入れ</th>
+            <th class="num">送り出し</th>
+            <th class="num sorted" aria-sort="ascending">倍率</th>
+            <th class="num">県外進学率</th>
+            <th class="num edge">高卒者</th>
+            <th class="num">進学率</th>
+            <th class="num">就職率</th>
+          </tr>
+        </thead>
+        <tbody id="data-body"></tbody>
+      </table>
+    </details>
+  </div>
 
   <div class="panel">
     <div class="head">
@@ -90,68 +182,11 @@
     </table>
   </div>
 
-  <div class="panel">
-    <div class="head">
-      <div>
-        <h2>受け皿の厚みと県外流出</h2>
-      </div>
-      <div class="segmented" role="group" aria-label="横軸">
-        <button type="button" id="x-ratio" aria-pressed="true">受け入れ倍率</button>
-        <button type="button" id="x-density" aria-pressed="false">高校100校あたり大学数</button>
-      </div>
-    </div>
-
-    <p class="hints">
-      <span>円にカーソルを合わせると内訳</span>
-      <span>クリックでその県を選択</span>
-      <span>選んだ県はヒートマップ・フロー図のタブへ引き継ぐ</span>
-    </p>
-
-    <div class="scatter">
-      <svg id="plot" viewBox="0 0 720 460" role="img" aria-label="受け皿の厚みと県外進学率の散布図"></svg>
-      <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
-    </div>
-
-    <div class="legend">
-      <span class="key">
-        <span>純流入</span>
-        <span class="chip" style="background: var(--pole-out)"></span>流出超過
-        <span class="chip" style="background: var(--pole-in)"></span>流入超過
-      </span>
-      <span class="key">円の大きさ: 高校数</span>
-      <button type="button" class="button push-right" id="clear" disabled>選択を解除</button>
-    </div>
-
-    <p class="finding" id="finding"></p>
-
-    <details>
-      <summary>表で見る（全47都道府県）</summary>
-      <table class="data">
-        <thead>
-          <tr>
-            <th>都道府県</th>
-            <th class="num">高校</th>
-            <th class="num">国立</th>
-            <th class="num">公立</th>
-            <th class="num">私立</th>
-            <th class="num">大学</th>
-            <th class="num">国立</th>
-            <th class="num">公立</th>
-            <th class="num">私立</th>
-            <th class="num">受け入れ</th>
-            <th class="num">送り出し</th>
-            <th class="num">倍率</th>
-            <th class="num">県外進学率</th>
-          </tr>
-        </thead>
-        <tbody id="data-body"></tbody>
-      </table>
-    </details>
-  </div>
-
   <footer>
     受け入れ＝その県の大学に入学した人数（県外・海外出身を含む）。送り出し＝その県の高校から大学へ進んだ人数。
     倍率は受け入れ ÷ 送り出し。高校数は全日制・定時制の本校＋分校。
+    進学率・就職率の分母は当年3月の高校卒業者で、送り出しに含まれる過年度卒（浪人）を含まない。
+    そのため送り出し ÷ 高卒者 と進学率は一致しない。
   </footer>
 </div>
 
@@ -170,41 +205,63 @@
   VIZ.state.onChange(() => window.location.reload());
 
   const S = OD_DATA.schools;
+  const P = OD_DATA.paths;
   const N = OD_DATA.prefectures.length;
-  const Y = OD_DATA.years.indexOf(S.year);
-  if (Y < 0) throw new Error("学校数の年度に対応する OD データがない");
+
+  // data.js が古いまま読まれると進路がない。白画面にせず、理由と直し方を出す。
+  // 配信済みの data.js はブラウザに残るので、更新の直後だけこの状態になりうる。
+  if (!P) {
+    document.getElementById("viz-chrome").innerHTML =
+      '<span class="note">データが古い可能性があります。'
+      + "スーパーリロード（Shift＋再読み込み）を試してください。</span>";
+    return;
+  }
+  const SCHOOL_Y = OD_DATA.years.indexOf(S.year);
+  if (SCHOOL_Y < 0) throw new Error("学校数の年度に対応する OD データがない");
 
   const format = VIZ.format;
 
-  // 県ごとの指標をまとめる。すべて学校数と同じ年度で揃える。
-  const items = [];
-  for (let i = 0; i < N; i += 1) {
-    const send = OD_DATA.local[Y][i] + OD_DATA.outbound[Y][i];
-    const intake = OD_DATA.capacity.total[Y][i];
-    items.push({
-      index: i,
-      name: format.name(i),
-      short: format.short(i),
-      highSchools: S.high_schools[i],
-      highNational: S.high_national[i],
-      highPublic: S.high_public[i],
-      highPrivate: S.high_private[i],
-      universities: S.universities[i],
-      univNational: S.university_national[i],
-      univPublic: S.university_public[i],
-      univPrivate: S.university_private[i],
-      density: S.universities[i] / S.high_schools[i] * 100,
-      send,
-      intake,
-      ratio: intake / send,
-      outRate: OD_DATA.outbound[Y][i] / send,
-      net: OD_DATA.netInflow[Y][i],
-    });
+  // 学校数だけが単年度で、進路・流出・受け入れは11年ある。
+  // 年で動く指標と動かない指標を分けて持ち、動くほうだけ描き直す。
+  function itemsFor(y) {
+    const list = [];
+    for (let i = 0; i < N; i += 1) {
+      const send = OD_DATA.local[y][i] + OD_DATA.outbound[y][i];
+      const intake = OD_DATA.capacity.total[y][i];
+      const graduates = P.graduates[y][i];
+      list.push({
+        index: i,
+        name: format.name(i),
+        short: format.short(i),
+        highSchools: S.high_schools[i],
+        highNational: S.high_national[i],
+        highPublic: S.high_public[i],
+        highPrivate: S.high_private[i],
+        universities: S.universities[i],
+        univNational: S.university_national[i],
+        univPublic: S.university_public[i],
+        univPrivate: S.university_private[i],
+        density: S.universities[i] / S.high_schools[i] * 100,
+        send,
+        intake,
+        ratio: intake / send,
+        outRate: OD_DATA.outbound[y][i] / send,
+        net: OD_DATA.netInflow[y][i],
+        graduates,
+        advance: P.university[y][i] / graduates,
+        senmon: P.senmon[y][i] / graduates,
+        employed: P.employed[y][i] / graduates,
+      });
+    }
+    return list;
   }
 
+  let items = itemsFor(SCHOOL_Y);
+
   const maxUniversities = Math.max(...items.map((item) => item.universities));
-  const maxHighSchools = Math.max(...items.map((item) => item.highSchools));
-  const maxNet = Math.max(...items.map((item) => Math.abs(item.net)));
+  const maxNet = Math.max(...OD_DATA.netInflow.flat().map(Math.abs));
+  // 円の大きさは年をまたいで比べられるよう、全年度を通じた最大で正規化する。
+  const maxGraduates = Math.max(...P.graduates.flat());
 
   const saved = VIZ.state.get();
   const state = {
@@ -300,6 +357,14 @@
       ticks: [0, 10, 20, 30, 40],
       format: (value) => value.toFixed(1),
     },
+    advance: {
+      key: "advance",
+      title: "大学等進学率（その県の高校卒業者のうち大学等へ進んだ割合）",
+      // 定義域は全年度で固定する。年を動かしたとき、軸ではなく点が動いてほしい。
+      domain: [0.36, 0.78],
+      ticks: [0.4, 0.5, 0.6, 0.7],
+      format: (value) => format.shareRough(value),
+    },
   };
 
   function correlation(getX, getY) {
@@ -327,16 +392,16 @@
     const xMin = Math.min(...xs);
     const xMax = Math.max(...xs);
     const pad = (xMax - xMin) * 0.08;
-    const domain = [Math.max(0, xMin - pad), xMax + pad];
-    const yDomain = [0.2, 0.9];
+    const domain = measure.domain || [Math.max(0, xMin - pad), xMax + pad];
+    const yDomain = [0.2, 0.95];
 
     const sx = (value) => M.left + (value - domain[0]) / (domain[1] - domain[0]) * (W - M.left - M.right);
     const sy = (value) => H - M.bottom - (value - yDomain[0]) / (yDomain[1] - yDomain[0]) * (H - M.top - M.bottom);
-    const radius = (item) => 3.5 + 7 * Math.sqrt(item.highSchools / maxHighSchools);
+    const radius = (item) => 3.5 + 7 * Math.sqrt(item.graduates / maxGraduates);
 
     const parts = [];
 
-    for (const value of [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]) {
+    for (const value of [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]) {
       parts.push(`<line class="grid" x1="${M.left}" x2="${W - M.right}" y1="${sy(value)}" y2="${sy(value)}"></line>`);
       parts.push(`<text class="tick" x="${M.left - 8}" y="${sy(value) + 3}" text-anchor="end">`
         + `${format.shareRough(value)}</text>`);
@@ -370,7 +435,7 @@
 
     // 大きい県から置き、重なったラベルは捨てる。選択中の県だけは必ず出す。
     const placed = [];
-    const ordered = items.slice().sort((a, b) => b.highSchools - a.highSchools);
+    const ordered = items.slice().sort((a, b) => b.graduates - a.graduates);
     const labels = [];
     for (const item of ordered) {
       const chosen = item.index === state.selected;
@@ -392,10 +457,16 @@
     parts.push(...labels);
 
     plot.innerHTML = parts.join("");
-    finding.innerHTML = `相関係数 <strong>r = ${stats.r.toFixed(2)}</strong>。`
-      + `${measure.key === "ratio"
-        ? "受け入れ倍率が1を割る県ほど県外へ出る。倍率1.0前後が均衡線で、それを超えるのは京都・東京・大阪・福岡など数県しかない。"
-        : "高校数に対して大学が薄い県ほど県外へ出る。ただし大学数そのものは高校数とほぼ比例するため、数を数えるだけでは差が出ない。"}`;
+    const FINDINGS = {
+      ratio: "受け入れ倍率が1を割る県ほど県外へ出る。倍率1.0前後が均衡線で、"
+        + "それを超えるのは京都・東京・大阪・福岡など数県しかない。",
+      density: "高校数に対して大学が薄い県ほど県外へ出る。"
+        + "ただし大学数そのものは高校数とほぼ比例するため、数を数えるだけでは差が出ない。",
+      advance: "進学率が高い県ほど県外へ出ない。ただし相関は弱く、"
+        + "神奈川のように県内に大学があっても隣が東京だと出ていく県がある。"
+        + "年を送ると全県が右へ動く。進学率は11年で全国8ポイント上がったが、県間の差はほとんど縮んでいない。",
+    };
+    finding.innerHTML = `相関係数 <strong>r = ${stats.r.toFixed(2)}</strong>。${FINDINGS[measure.key]}`;
 
     for (const circle of plot.querySelectorAll(".dot")) {
       const index = Number(circle.dataset.index);
@@ -419,6 +490,10 @@
       `倍率 <span class="num">${item.ratio.toFixed(2)}</span>`
         + ` / 県外進学率 <span class="num">${format.share(item.outRate)}</span>`,
       `純流入 <span class="num">${format.signed(item.net)}</span>`,
+      `<span class="sub">高卒者 ${format.count(item.graduates)}人 —`
+        + ` 進学 ${format.shareRough(item.advance)}`
+        + ` / 専門 ${format.shareRough(item.senmon)}`
+        + ` / 就職 ${format.shareRough(item.employed)}</span>`,
     ].join("<br>");
     tooltip.style.opacity = "1";
 
@@ -431,9 +506,11 @@
     tooltip.style.top = `${Math.max(0, top)}px`;
   }
 
+  const yearNote = document.getElementById("year-note");
   const measureButtons = {
     ratio: document.getElementById("x-ratio"),
     density: document.getElementById("x-density"),
+    advance: document.getElementById("x-advance"),
   };
 
   function setAxis(axis, { silent = false } = {}) {
@@ -454,23 +531,29 @@
   const dataBody = document.getElementById("data-body");
 
   function renderTable() {
+    // 帯の長さは倍率そのものを、その年の最大で割った割合。均衡（1.00）が中ほどに来る。
+    const widest = Math.max(...items.map((item) => item.ratio));
     dataBody.innerHTML = items
       .slice()
       .sort((a, b) => a.ratio - b.ratio)
       .map((item) => `<tr${item.index === state.selected ? ' class="selected"' : ""}>
         <td>${item.name}</td>
-        <td class="num">${item.highSchools}</td>
+        <td class="num edge">${item.highSchools}</td>
         <td class="num">${item.highNational}</td>
         <td class="num">${item.highPublic}</td>
         <td class="num">${item.highPrivate}</td>
-        <td class="num">${item.universities}</td>
+        <td class="num edge">${item.universities}</td>
         <td class="num">${item.univNational}</td>
         <td class="num">${item.univPublic}</td>
         <td class="num">${item.univPrivate}</td>
-        <td class="num">${format.count(item.intake)}</td>
+        <td class="num edge">${format.count(item.intake)}</td>
         <td class="num">${format.count(item.send)}</td>
-        <td class="num">${item.ratio.toFixed(2)}</td>
+        <td class="num sorted" style="--fill:${(item.ratio / widest * 100).toFixed(1)}%">${
+          item.ratio.toFixed(2)}</td>
         <td class="num">${format.shareRough(item.outRate)}</td>
+        <td class="num edge">${format.count(item.graduates)}</td>
+        <td class="num">${format.shareRough(item.advance)}</td>
+        <td class="num">${format.shareRough(item.employed)}</td>
       </tr>`).join("");
   }
 
@@ -486,11 +569,23 @@
   clearButton.addEventListener("click", () => setSelected(null));
 
   // ---- 起動 ----------------------------------------------------------------
+  // 年で動くのは散布図と表だけ。棒は学校数なので2025年度に据え置く。
+  let lastYear = -1;
+
+  function setYear(y) {
+    if (y === lastYear) return;
+    lastYear = y;
+    items = itemsFor(y);
+    yearNote.textContent = `${OD_DATA.years[y]}年度`;
+    renderBars();
+    renderPlot();
+    renderTable();
+  }
+
   VIZ.chrome.mount({
     view: "schools",
-    frozen: true,
-    frozenYear: S.year,
-    note: `学校数は${S.year}年度のみ。年度は他の2ビューへ引き継ぐ。`,
+    note: `大学数・高校数は${S.year}年度のみ。散布図と表は年度で動く。`,
+    onYear: () => setYear(VIZ.chrome.yearIndex()),
     onTheme: () => {
       theme = VIZ.theme.read();
       renderPlot();
