@@ -12,6 +12,7 @@ import csv
 import json
 from pathlib import Path
 
+import stamp_assets
 from build_od import PREFECTURES
 
 # 軸ラベル用の短縮名。都府県の接尾辞を落とす（北海道はそのまま）。
@@ -132,6 +133,12 @@ def main() -> None:
     args.output.write_text(f"const OD_DATA = {body};\n", encoding="utf-8")
     size_kb = args.output.stat().st_size / 1024
     print(f"{args.output}: {len(years)}年分 / {size_kb:.0f} KB")
+
+    # 中身が変わったので、HTML 側の版も打ち直す。付けないと配信直後の再訪者に
+    # 古い data.js が渡り、増えたキーのない状態で動くことになる。
+    for page in sorted(args.output.parent.glob("*.html")):
+        stamp_assets.stamp(page)
+    print(f"{args.output.parent}/*.html: 資源の版を打ち直した")
 
 
 if __name__ == "__main__":
