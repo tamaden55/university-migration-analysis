@@ -40,7 +40,18 @@
   .finding strong { color: var(--text-primary); }
 
   table.data th, table.data td { padding: 4px 8px 4px 0; }
-  table.data tr.selected td { background: var(--gridline); }
+  table.data tr.selected td { background-color: var(--gridline); }
+
+  /* 並び順の手掛かり。見出しで何順かを言い、数値の背後の帯で並びを形にする。 */
+  table.data th.sorted { color: var(--text-primary); }
+  table.data th.sorted::after { content: "▲"; font-size: 9px; margin-left: 3px; }
+  table.data td.sorted {
+    color: var(--text-primary);
+    padding-right: 8px;
+    background-image: linear-gradient(to right,
+      var(--gridline) 0 var(--fill), transparent var(--fill));
+    background-repeat: no-repeat;
+  }
 
   footer { margin-top: 8px; }
 </style>
@@ -128,7 +139,7 @@
     <p class="finding" id="finding"></p>
 
     <details>
-      <summary>表で見る（全47都道府県）</summary>
+      <summary>表で見る（全47都道府県・受け入れ倍率の低い順）</summary>
       <table class="data">
         <thead>
           <tr>
@@ -143,7 +154,7 @@
             <th class="num">私立</th>
             <th class="num">受け入れ</th>
             <th class="num">送り出し</th>
-            <th class="num">倍率</th>
+            <th class="num sorted" aria-sort="ascending">倍率</th>
             <th class="num">県外進学率</th>
             <th class="num">高卒者</th>
             <th class="num">進学率</th>
@@ -504,6 +515,8 @@
   const dataBody = document.getElementById("data-body");
 
   function renderTable() {
+    // 帯の長さは倍率そのものを、その年の最大で割った割合。均衡（1.00）が中ほどに来る。
+    const widest = Math.max(...items.map((item) => item.ratio));
     dataBody.innerHTML = items
       .slice()
       .sort((a, b) => a.ratio - b.ratio)
@@ -519,7 +532,8 @@
         <td class="num">${item.univPrivate}</td>
         <td class="num">${format.count(item.intake)}</td>
         <td class="num">${format.count(item.send)}</td>
-        <td class="num">${item.ratio.toFixed(2)}</td>
+        <td class="num sorted" style="--fill:${(item.ratio / widest * 100).toFixed(1)}%">${
+          item.ratio.toFixed(2)}</td>
         <td class="num">${format.shareRough(item.outRate)}</td>
         <td class="num">${format.count(item.graduates)}</td>
         <td class="num">${format.shareRough(item.advance)}</td>
