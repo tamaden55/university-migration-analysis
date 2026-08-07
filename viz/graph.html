@@ -20,6 +20,7 @@
   }
   canvas.grabbing { cursor: grabbing; }
   .field #zoom-value { min-width: 3.4em; color: var(--muted); }
+  .field .note { font-size: 12px; color: var(--muted); }
 
   .legend .scale { display: inline-block; }
   .legend .bar {
@@ -52,11 +53,12 @@
         <span class="value" id="zoom-value">1.0倍</span>
       </span>
       <span class="field">
-        大きさ
-        <span class="segmented" role="group" aria-label="ノードの大きさ">
+        ノードの大きさ
+        <span class="segmented" role="group" aria-label="ノードの大きさが表すもの">
           <button type="button" id="size-send" aria-pressed="true">送り出し</button>
           <button type="button" id="size-take" aria-pressed="false">受け入れ</button>
         </span>
+        <span class="note" id="size-note"></span>
       </span>
       <label class="field">
         しきい値
@@ -359,8 +361,9 @@
   // 送り出し（その県の高校から進学した人数）と受け入れ（その県の大学に入った人数）を
   // 切り替える。定義域はモードごとに全年度で固定する。
   // 密集はズームで解くので、等倍時の大きさは重なりぎりぎりまで上げてある。
-  const nodeRadius = (value) =>
-    4.5 + 11.5 * Math.sqrt(value / (state.size === "send" ? maxEntrants : maxCapacity));
+  const RADIUS_MIN = 4.5;
+  const RADIUS_SPAN = 11.5;
+  const radiusOf = (value, max) => RADIUS_MIN + RADIUS_SPAN * Math.sqrt(value / max);
   // 東京の純流入は次点の4倍あり、線形でも平方根でも他県が白く飛ぶ。
   // 打ち切らずに中位まで色を届かせるため、符号付きのべき乗（0.4）を使う。
   const netPosition = (net) => Math.sign(net) * Math.pow(Math.abs(net) / maxNet, 0.4);
@@ -415,6 +418,20 @@
 
   function sizeAt(i) {
     return state.size === "send" ? entrantsAt(i) : capacityAt(i);
+  }
+
+  // 大きさの切り替えは、2つの定義の間を行き来する連続量として持つ。
+  // 0 が送り出し、1 が受け入れ。切り替えた瞬間に飛ばさず移すことで、
+  // どの県が膨らんでどの県が縮んだかが目で追える。何が変わったか分からない、
+  // という状態を説明文だけで埋めようとしない。
+  let sizeMix = state.size === "send" ? 0 : 1;
+
+  function nodeRadiusOf(index) {
+    if (sizeMix <= 0) return radiusOf(entrantsAt(index), maxEntrants);
+    if (sizeMix >= 1) return radiusOf(capacityAt(index), maxCapacity);
+    const send = radiusOf(entrantsAt(index), maxEntrants);
+    const take = radiusOf(capacityAt(index), maxCapacity);
+    return send + (take - send) * sizeMix;
   }
 
   // 表示するエッジ。県を選んでいるときは、その県に触れる流れだけを最小人数まで下げて出す。
@@ -563,7 +580,7 @@
     }
 
     // 終点はノードの縁で止め、その先を矢じりにあてる。
-    const radius = nodeRadius(sizeAt(edge.j)) * mark;
+    const radius = nodeRadiusOf(edge.j) * mark;
     const head = Math.max(ARROW_MIN * mark, width * 2.1);
     const tipAt = edgeOfNode(from, control, to, radius + 1);
     const endAt = Math.max(0.02, tipAt - head * 0.7 / speedAt(from, control, to, tipAt));
@@ -599,7 +616,7 @@
 
   function drawNode(index, screen, mark, dim) {
     const point = screen[index];
-    const radius = nodeRadius(sizeAt(index)) * mark;
+    const radius = nodeRadiusOf(index) * mark;
     if (point.x < -radius - 4 || point.x > WIDTH + radius + 4
       || point.y < -radius - 4 || point.y > HEIGHT + radius + 4) return;
 
@@ -634,7 +651,7 @@
       const name = format.short(index);
       const point = screen[index];
       if (point.x < -60 || point.x > WIDTH + 60 || point.y < -20 || point.y > HEIGHT + 20) continue;
-      const radius = nodeRadius(sizeAt(index)) * mark + 4;
+      const radius = nodeRadiusOf(index) * mark + 4;
       const width = ctx.measureText(name).width;
       // 右端では文字が切れるのでノードの左側へ回す。
       // ただし回した先が左端を割るなら回さない。切れる側を入れ替えるだけになる。
@@ -752,7 +769,7 @@
     if (state.focus === null) return;
     const index = state.focus;
     const point = screen[index];
-    const radius = nodeRadius(sizeAt(index)) * mark;
+    const radius = nodeRadiusOf(index) * mark;
     const name = format.short(index);
     const year = VIZ.chrome.yearIndex();
 
@@ -883,7 +900,7 @@
     for (let index = 0; index < N; index += 1) {
       const point = screenOf(points[index]);
       const distance = Math.hypot(point.x - x, point.y - y);
-      const reach = Math.max(nodeRadius(sizeAt(index)) * mark + 4, 9);
+      const reach = Math.max(nodeRadiusOf(index) * mark + 4, 9);
       if (distance <= reach && distance < bestDistance) {
         best = index;
         bestDistance = distance;
@@ -1112,18 +1129,52 @@
     send: document.getElementById("size-send"),
     take: document.getElementById("size-take"),
   };
+  const sizeNote = document.getElementById("size-note");
 
-  function setSize(size, { silent = false } = {}) {
+  // ボタンの語だけでは何の大きさか分からない。いま何を表しているかを地の文で添える。
+  const SIZE_MEANING = {
+    send: "その県の高校から大学へ進んだ人数",
+    take: "その県の大学に入学した人数",
+  };
+
+  const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const SIZE_TWEEN_MS = 420;
+  let sizeTween = 0;
+
+  function setSize(size, { silent = false, animate = false } = {}) {
     state.size = size;
     for (const [key, other] of Object.entries(sizeButtons)) {
       other.setAttribute("aria-pressed", key === size ? "true" : "false");
     }
+    sizeNote.textContent = SIZE_MEANING[size];
     if (!silent) VIZ.state.patch({ size });
-    draw();
+
+    const target = size === "send" ? 0 : 1;
+    cancelAnimationFrame(sizeTween);
+    if (!animate || REDUCED_MOTION.matches) {
+      sizeMix = target;
+      draw();
+      return;
+    }
+
+    // 飛ばさずに移す。どの県が膨らみ、どの県が縮んだかを目で追えるようにする。
+    const from = sizeMix;
+    let started = 0;
+    const step = (stamp) => {
+      if (!started) started = stamp;
+      const progress = Math.min(1, (stamp - started) / SIZE_TWEEN_MS);
+      const eased = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      sizeMix = from + (target - from) * eased;
+      draw();
+      if (progress < 1) sizeTween = requestAnimationFrame(step);
+    };
+    sizeTween = requestAnimationFrame(step);
   }
 
   for (const size of Object.keys(sizeButtons)) {
-    sizeButtons[size].addEventListener("click", () => setSize(size));
+    sizeButtons[size].addEventListener("click", () => setSize(size, { animate: true }));
   }
 
   const thresholdInput = document.getElementById("threshold");
