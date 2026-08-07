@@ -6,7 +6,13 @@
 <title>大学進学の都道府県間フロー 2015-2025</title>
 <link rel="stylesheet" href="shared/base.css">
 <style>
-  canvas { cursor: grab; touch-action: pan-y; }
+  /* 図が主役のページなので、読み物の幅（980px）ではなく画面の幅を使う。
+     リード文と脚注は .lede / footer 側の字数制限で読める幅に留まる。 */
+  .wrap { max-width: min(1560px, 100%); }
+  footer { max-width: 96ch; }
+
+  /* 枠より図が細いとき（画面が横に広いとき）は中央に置く */
+  canvas { cursor: grab; touch-action: pan-y; margin: 0 auto; }
   canvas.grabbing { cursor: grabbing; }
   .field #zoom-value { min-width: 3.4em; color: var(--muted); }
 
@@ -60,6 +66,7 @@
       <span>クリックでその県の流れだけ</span>
       <span>ホイールで拡大縮小</span>
       <span>ドラッグで移動</span>
+      <span>拡大すると右下に全体図</span>
       <span>ダブルクリックで全国に戻る</span>
     </p>
 
@@ -147,35 +154,69 @@
   // 東日本 = 北海道〜愛知、西日本 = 三重〜沖縄。中部と近畿の境で切っている。
   const EAST_END = OD_DATA.prefectures.indexOf("三重県");
 
-  const WIDTH = 680;
-  const MAX_HEIGHT = 700;
   const PAD = 26;
 
   const canvas = document.getElementById("flowmap");
   const ctx = canvas.getContext("2d");
   const tooltip = document.getElementById("tooltip");
 
+  // ---- 大きさ --------------------------------------------------------------
+  // 等倍の大きさを決めるのは高さのほう。日本は縦に長く、横に広げても余白が増えるだけで
+  // 図は大きくならない。そこで高さは画面から取れるだけ取り、幅はその高さに対する上限で抑える。
+  // 上限は日本の外接範囲（幅÷高さ ≒ 0.85）より少しゆるく取って、ラベルと余白の分を残す。
+  const MIN_WIDTH = 320;
+  const MIN_HEIGHT = 460;
+  const MAX_HEIGHT = 1000;
+  const VIEWPORT_SHARE = 0.78;
+  const ASPECT_CAP = 1.15;
+
+  let WIDTH = 680;
+  let HEIGHT = 700;
+
+  function measure() {
+    HEIGHT = Math.round(Math.min(MAX_HEIGHT,
+      Math.max(MIN_HEIGHT, window.innerHeight * VIEWPORT_SHARE)));
+    const frame = canvas.parentElement.clientWidth;
+    WIDTH = Math.max(MIN_WIDTH, Math.round(Math.min(frame, HEIGHT * ASPECT_CAP)));
+  }
+
   // ---- 投影 ----------------------------------------------------------------
   // 全国の外接範囲に合わせた1本きり。地域を絞る操作は投影ではなく後段のズームで表す。
-  let HEIGHT = MAX_HEIGHT;
+  // 枠の大きさが変わったら組み直すが、緯度経度と world 座標の対応は proj が持つので、
+  // 組み直しても「いまどこを見ていたか」を地理の側で引き継げる。
+  const LATS = COORDS.map(([lat]) => lat);
+  const LONS = COORDS.map(([, lon]) => lon);
+  const LAT_RANGE = [Math.min(...LATS), Math.max(...LATS)];
+  const LON_RANGE = [Math.min(...LONS), Math.max(...LONS)];
+  const SHRINK = Math.cos((LAT_RANGE[0] + LAT_RANGE[1]) / 2 * Math.PI / 180);
+  const SPAN_X = (LON_RANGE[1] - LON_RANGE[0]) * SHRINK;
+  const SPAN_Y = LAT_RANGE[1] - LAT_RANGE[0];
 
-  const points = (() => {
-    const lats = COORDS.map(([lat]) => lat);
-    const lons = COORDS.map(([, lon]) => lon);
-    const latRange = [Math.min(...lats), Math.max(...lats)];
-    const lonRange = [Math.min(...lons), Math.max(...lons)];
-    const shrink = Math.cos((latRange[0] + latRange[1]) / 2 * Math.PI / 180);
-    const spanX = (lonRange[1] - lonRange[0]) * shrink;
-    const spanY = latRange[1] - latRange[0];
-    const scale = Math.min((WIDTH - PAD * 2) / spanX, (MAX_HEIGHT - PAD * 2) / spanY);
-    const offsetX = (WIDTH - spanX * scale) / 2;
+  let proj = null;
+  let points = [];
 
-    HEIGHT = Math.round(spanY * scale + PAD * 2);
-    return COORDS.map(([lat, lon]) => ({
-      x: offsetX + (lon - lonRange[0]) * shrink * scale,
-      y: PAD + (latRange[1] - lat) * scale,
-    }));
-  })();
+  function project() {
+    const scale = Math.min((WIDTH - PAD * 2) / SPAN_X, (HEIGHT - PAD * 2) / SPAN_Y);
+    proj = {
+      scale,
+      offsetX: (WIDTH - SPAN_X * scale) / 2,
+      offsetY: (HEIGHT - SPAN_Y * scale) / 2,
+    };
+    points = COORDS.map(([lat, lon]) => geoToWorld(lat, lon));
+  }
+
+  const geoToWorld = (lat, lon) => ({
+    x: proj.offsetX + (lon - LON_RANGE[0]) * SHRINK * proj.scale,
+    y: proj.offsetY + (LAT_RANGE[1] - lat) * proj.scale,
+  });
+
+  const worldToGeo = (x, y) => ({
+    lat: LAT_RANGE[1] - (y - proj.offsetY) / proj.scale,
+    lon: LON_RANGE[0] + (x - proj.offsetX) / (SHRINK * proj.scale),
+  });
+
+  measure();
+  project();
 
   // ---- ビュー変換 ----------------------------------------------------------
   // 投影した座標（以下 world）に scale と平行移動を掛けて画面座標にする。
@@ -378,13 +419,36 @@
   }
 
   // ---- 描画 ----------------------------------------------------------------
+  // 枠が変わったら投影を組み直す。組み直しの前後で見ている場所が飛ばないよう、
+  // 画面中心の地点を緯度経度で覚えておいて当て直す。プリセット中はプリセットを取り直す。
   function resize() {
+    const center = state.preset === null && proj
+      ? worldToGeo((WIDTH / 2 - view.tx) / view.scale, (HEIGHT / 2 - view.ty) / view.scale)
+      : null;
+
+    measure();
+    project();
+
     const ratio = window.devicePixelRatio || 1;
     canvas.width = WIDTH * ratio;
     canvas.height = HEIGHT * ratio;
     canvas.style.width = `${WIDTH}px`;
     canvas.style.height = `${HEIGHT}px`;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    if (state.preset === "all") {
+      view.scale = 1;
+      view.tx = 0;
+      view.ty = 0;
+    } else if (state.preset !== null) {
+      fitTo(presetIndices[state.preset]);
+    } else if (center) {
+      const world = geoToWorld(center.lat, center.lon);
+      view.tx = WIDTH / 2 - world.x * view.scale;
+      view.ty = HEIGHT / 2 - world.y * view.scale;
+    }
+    clampView();
+    syncView();
     draw();
   }
 
@@ -528,10 +592,12 @@
       if (point.x < -60 || point.x > WIDTH + 60 || point.y < -20 || point.y > HEIGHT + 20) continue;
       const radius = nodeRadius(sizeAt(index)) * mark + 4;
       const width = ctx.measureText(name).width;
-      // 右端では文字が切れるので、ノードの左側へ回す。
-      const flip = point.x + radius + width + 6 > WIDTH;
+      // 右端では文字が切れるのでノードの左側へ回す。
+      // ただし回した先が左端を割るなら回さない。切れる側を入れ替えるだけになる。
+      const behind = point.x - radius - width - 3;
+      const flip = point.x + radius + width + 6 > WIDTH && behind >= 2;
       const box = {
-        x: flip ? point.x - radius - width - 3 : point.x + radius,
+        x: flip ? behind : point.x + radius,
         y: point.y - 7, w: width + 3, h: 14,
       };
       const collides = placed.some((other) =>
@@ -546,6 +612,86 @@
       ctx.fillStyle = forced.has(index) ? theme.text : theme.secondary;
       ctx.fillText(name, box.x, point.y);
     }
+  }
+
+  // ---- 全体図 --------------------------------------------------------------
+  // 拡大するほど手元は読めるが、全体のどこを見ているのかが分からなくなる。
+  // 縮尺の小さい全体図を右下に出し、いま見えている範囲を枠で示す。枠は掴んで動かせる。
+  const OVERVIEW_WIDTH = 152;
+  const OVERVIEW_MARGIN = 12;
+  const OVERVIEW_FROM = 1.05;   // 等倍付近では出さない。見失いようがないため
+
+  const overviewShown = () => view.scale > OVERVIEW_FROM;
+
+  function overviewBox() {
+    const height = Math.round(OVERVIEW_WIDTH * HEIGHT / WIDTH);
+    return {
+      x: WIDTH - OVERVIEW_WIDTH - OVERVIEW_MARGIN,
+      y: HEIGHT - height - OVERVIEW_MARGIN,
+      w: OVERVIEW_WIDTH,
+      h: height,
+    };
+  }
+
+  function drawOverview() {
+    if (!overviewShown()) return;
+    const box = overviewBox();
+    const k = box.w / WIDTH;
+
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = theme.surface;
+    ctx.fillRect(box.x, box.y, box.w, box.h);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = theme.axis;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
+
+    // ここは数値を読む場所ではなく現在地を知る場所なので、県は向きが分かる点に留める。
+    for (let index = 0; index < N; index += 1) {
+      const chosen = index === state.focus;
+      ctx.fillStyle = chosen ? theme.accent : theme.muted;
+      ctx.beginPath();
+      ctx.arc(box.x + points[index].x * k, box.y + points[index].y * k,
+        chosen ? 3 : 1.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // いま見えている範囲。外側を伏せて、切り取っている場所を示す。
+    const seen = {
+      x: box.x + (-view.tx / view.scale) * k,
+      y: box.y + (-view.ty / view.scale) * k,
+      w: WIDTH / view.scale * k,
+      h: HEIGHT / view.scale * k,
+    };
+    ctx.beginPath();
+    ctx.rect(box.x, box.y, box.w, box.h);
+    ctx.rect(seen.x, seen.y, seen.w, seen.h);
+    ctx.fillStyle = VIZ.theme.withAlpha(theme.text, theme.dark ? 0.20 : 0.11);
+    ctx.fill("evenodd");
+    ctx.strokeStyle = theme.text;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(seen.x, seen.y, seen.w, seen.h);
+    ctx.restore();
+  }
+
+  function inOverview(point) {
+    if (!overviewShown()) return false;
+    const box = overviewBox();
+    return point.x >= box.x && point.x <= box.x + box.w
+      && point.y >= box.y && point.y <= box.y + box.h;
+  }
+
+  // 全体図の中で指した地点を、本図の中心へ持ってくる。
+  function jumpTo(point) {
+    const box = overviewBox();
+    const k = box.w / WIDTH;
+    view.tx = WIDTH / 2 - (point.x - box.x) / k * view.scale;
+    view.ty = HEIGHT / 2 - (point.y - box.y) / k * view.scale;
+    clampView();
+    clearPreset();
+    syncView();
+    draw();
   }
 
   function draw() {
@@ -580,6 +726,7 @@
     const priority = order.filter((index) =>
       state.focus === null || touched.has(index) || index === state.focus);
     drawLabels(priority, forced, screen, mark);
+    drawOverview();
 
     renderTable(edges);
   }
@@ -666,6 +813,15 @@
   }
 
   function hoverAt(event) {
+    // 全体図の上では県を拾わない。小窓の裏のノードに反応すると操作が噛み合わない。
+    if (inOverview(canvasPoint(event))) {
+      canvas.style.cursor = "pointer";
+      if (state.hover === null) return;
+      state.hover = null;
+      tooltip.style.opacity = "0";
+      draw();
+      return;
+    }
     const index = nodeAt(event);
     canvas.style.cursor = index === null ? "" : "pointer";
     if (index === null && state.hover === null) return;
@@ -682,27 +838,40 @@
   let drag = null;
 
   canvas.addEventListener("wheel", (event) => {
-    const point = canvasPoint(event);
+    const at = canvasPoint(event);
+    // 全体図の上で回したときは、小窓の隅ではなく本図の中心を固定する。
+    const point = inOverview(at) ? { x: WIDTH / 2, y: HEIGHT / 2 } : at;
     const factor = event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP;
     // 上限・下限に張り付いていて動かせないときは、ページのスクロールに譲る。
     if (!zoomAt(factor, point.x, point.y)) return;
     event.preventDefault();
     clearPreset();
+    syncView();   // clearPreset はプリセットが外れる1回しか通らない。倍率表示は毎回要る
     hoverAt(event);
     draw();
   }, { passive: false });
 
   canvas.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 || event.pointerType === "touch") return;
-    drag = { x: event.clientX, y: event.clientY, tx: view.tx, ty: view.ty, moved: 0 };
+    const point = canvasPoint(event);
+    const overview = inOverview(point);
+    drag = { x: event.clientX, y: event.clientY, tx: view.tx, ty: view.ty, moved: 0, overview };
     canvas.setPointerCapture(event.pointerId);
-    canvas.classList.add("grabbing");
     tooltip.style.opacity = "0";
+    if (overview) {
+      jumpTo(point);
+      return;
+    }
+    canvas.classList.add("grabbing");
   });
 
   canvas.addEventListener("pointermove", (event) => {
     if (!drag) {
       hoverAt(event);
+      return;
+    }
+    if (drag.overview) {
+      jumpTo(canvasPoint(event));
       return;
     }
     const bounds = canvas.getBoundingClientRect();
@@ -719,12 +888,12 @@
 
   function endDrag(event) {
     if (!drag) return;
-    const { moved } = drag;
+    const { moved, overview } = drag;
     drag = null;
     canvas.classList.remove("grabbing");
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     // 動かさずに離したならクリック。ドラッグの終わりで選択が変わると事故になる。
-    if (moved < DRAG_SLOP) {
+    if (!overview && moved < DRAG_SLOP) {
       const index = nodeAt(event);
       setFocus(index !== null && index === state.focus ? null : index);
     }
@@ -870,7 +1039,15 @@
   }
 
   // ---- 起動 ----------------------------------------------------------------
-  window.addEventListener("resize", resize);
+  // resize は連続して飛んでくる。投影の組み直しは1フレームに1回で足りる。
+  let resizePending = 0;
+  window.addEventListener("resize", () => {
+    if (resizePending) return;
+    resizePending = requestAnimationFrame(() => {
+      resizePending = 0;
+      resize();
+    });
+  });
 
   VIZ.chrome.mount({
     view: "graph",
