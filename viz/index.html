@@ -92,18 +92,8 @@
     </div>
 
     <details>
-      <summary>表で見る（選択年の上位40流動）</summary>
-      <table>
-        <thead>
-          <tr>
-            <th>出身高校の所在地</th>
-            <th>大学の所在地</th>
-            <th class="num">入学者数</th>
-            <th class="num">流出構成比</th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
+      <summary id="table-summary">表で見る（選択年の上位40流動）</summary>
+      <div id="table-host"></div>
     </details>
   </div>
 
@@ -118,6 +108,7 @@
 <script src="shared/format.js"></script>
 <script src="shared/state.js"></script>
 <script src="shared/chrome.js"></script>
+<script src="shared/flowtable.js"></script>
 <script>
 (() => {
   "use strict";
@@ -437,6 +428,7 @@
     clearButton.disabled = cell === null;
     if (!silent) VIZ.state.patch({ pref: cell === null ? null : format.toJis(cell.row) });
     if (!cell) hideTooltip();
+    renderTable(VIZ.chrome.yearIndex());
     draw();
   }
 
@@ -501,11 +493,13 @@
   const statRate = document.getElementById("stat-rate");
   const statTopIn = document.getElementById("stat-top-in");
   const statTopOut = document.getElementById("stat-top-out");
-  const tableBody = document.getElementById("table-body");
+  const tableHost = document.getElementById("table-host");
+  const tableSummary = document.getElementById("table-summary");
   let renderedYear = -1;
 
   function renderYearDetails() {
     const y = VIZ.chrome.yearIndex();
+    renderTable(y);
     if (y === renderedYear) return;
     renderedYear = y;
 
@@ -526,21 +520,33 @@
     statTopOut.innerHTML = `${format.short(topOut)} `
       + `<small>${format.signed(OD_DATA.netInflow[y][topOut])}</small>`;
 
-    const flows = [];
-    for (let i = 0; i < N; i += 1) {
-      for (let j = 0; j < N; j += 1) {
-        if (i === j) continue;
-        const value = OD_DATA.matrix[y][i][j];
-        if (value > 0) flows.push({ i, j, value, share: value / OD_DATA.outbound[y][i] });
-      }
+  }
+
+  // 表は年度と注目県の両方で変わる。県は行（出身県）を主語に取る。図で選んだ県が
+  // 表の側でも主語になり、フロー図のタブへ移っても同じ県の表が続く。
+  const ALL_PAIRS = [];
+  for (let i = 0; i < N; i += 1) {
+    for (let j = 0; j < N; j += 1) {
+      if (i !== j) ALL_PAIRS.push({ i, j });
     }
-    flows.sort((a, b) => b.value - a.value);
-    tableBody.innerHTML = flows.slice(0, 40).map((flow) => `<tr>
-        <td>${format.name(flow.i)}</td>
-        <td>${format.name(flow.j)}</td>
-        <td class="num">${format.count(flow.value)}</td>
-        <td class="num">${format.share(flow.share)}</td>
-      </tr>`).join("");
+  }
+
+  let tableKey = "";
+
+  function renderTable(y) {
+    const focus = state.pinned === null ? null : state.pinned.row;
+    const key = `${y}|${focus}`;
+    if (key === tableKey) return;
+    tableKey = key;
+
+    tableSummary.textContent =
+      VIZ.flowtable.summaryText(focus, "表で見る（選択年の上位40流動）");
+    VIZ.flowtable.render(tableHost, {
+      year: y,
+      focus,
+      flows: ALL_PAIRS,
+      limit: focus === null ? 40 : 20,
+    });
   }
 
   // ---- モード切替 ----------------------------------------------------------
