@@ -11,8 +11,13 @@
   .wrap { max-width: min(1560px, 100%); }
   footer { max-width: 96ch; }
 
-  /* 枠より図が細いとき（画面が横に広いとき）は中央に置く */
-  canvas { cursor: grab; touch-action: pan-y; margin: 0 auto; }
+  /* 図の面はパネルと同じ背景色なので、境目がないと「どこで切れているか」が読めない。
+     レイアウトを動かさないよう border ではなく box-shadow で縁を引く。 */
+  canvas {
+    cursor: grab; touch-action: pan-y; margin: 0 auto;
+    box-shadow: 0 0 0 1px var(--border);
+    border-radius: 6px;
+  }
   canvas.grabbing { cursor: grabbing; }
   .field #zoom-value { min-width: 3.4em; color: var(--muted); }
 
@@ -161,14 +166,17 @@
   const tooltip = document.getElementById("tooltip");
 
   // ---- 大きさ --------------------------------------------------------------
-  // 等倍の大きさを決めるのは高さのほう。日本は縦に長く、横に広げても余白が増えるだけで
-  // 図は大きくならない。そこで高さは画面から取れるだけ取り、幅はその高さに対する上限で抑える。
-  // 上限は日本の外接範囲（幅÷高さ ≒ 0.85）より少しゆるく取って、ラベルと余白の分を残す。
+  // 幅は枠いっぱいに取る。等倍で全国を出すときの大きさを決めるのは高さのほうなので
+  // （日本は縦に長い）、横に広げても等倍の図は大きくならない。それでも幅を切らないのは、
+  // 拡大して1県の出入りを追うときに、流れが左右へ広がるためである。
+  //
+  // 幅を絞って中央に置く手も試したが、canvas の背景色とパネルの背景色が同じなので
+  // 境目が見えず、「余白があるのに絵が切れている」ようにしか見えなかった。
+  // 切れ目は枠の縁と一致させる。
   const MIN_WIDTH = 320;
-  const MIN_HEIGHT = 460;
+  const MIN_HEIGHT = 700;   // 従来の固定値。画面が低くてもここより小さくはしない
   const MAX_HEIGHT = 1000;
   const VIEWPORT_SHARE = 0.78;
-  const ASPECT_CAP = 1.15;
 
   let WIDTH = 680;
   let HEIGHT = 700;
@@ -176,8 +184,7 @@
   function measure() {
     HEIGHT = Math.round(Math.min(MAX_HEIGHT,
       Math.max(MIN_HEIGHT, window.innerHeight * VIEWPORT_SHARE)));
-    const frame = canvas.parentElement.clientWidth;
-    WIDTH = Math.max(MIN_WIDTH, Math.round(Math.min(frame, HEIGHT * ASPECT_CAP)));
+    WIDTH = Math.max(MIN_WIDTH, Math.round(canvas.parentElement.clientWidth));
   }
 
   // ---- 投影 ----------------------------------------------------------------
