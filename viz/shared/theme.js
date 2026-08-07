@@ -2,13 +2,13 @@
 window.VIZ = window.VIZ || {};
 
 // 明暗の切り替えと、canvas から使うための CSS 変数の読み出し。
+// 既定は明色。OS 設定には追従せず、押されたときだけ暗色にする。
 // タブで行き来しても配色が戻らないよう、選択はページをまたいで持ち越す。
 VIZ.theme = (() => {
   const KEY = "viz-theme";
-  const query = window.matchMedia("(prefers-color-scheme: dark)");
   const listeners = [];
 
-  // file:// では localStorage が使えない環境がある。読めなければ OS 設定に従うだけで、
+  // file:// では localStorage が使えない環境がある。読めなければ既定の明色のままで、
   // 動作そのものは壊さない。
   function stored() {
     try { return window.localStorage.getItem(KEY); } catch (error) { return null; }
@@ -19,10 +19,7 @@ VIZ.theme = (() => {
   }
 
   function isDark() {
-    const chosen = document.documentElement.dataset.theme;
-    if (chosen === "dark") return true;
-    if (chosen === "light") return false;
-    return query.matches;
+    return document.documentElement.dataset.theme === "dark";
   }
 
   function notify() {
@@ -82,8 +79,6 @@ VIZ.theme = (() => {
   // 保存されている選択を、本文が描かれる前に当てる。
   const chosen = stored();
   if (chosen === "dark" || chosen === "light") document.documentElement.dataset.theme = chosen;
-
-  query.addEventListener("change", notify);
 
   return { isDark, toggle, onChange, read, channels, blend, withAlpha };
 })();

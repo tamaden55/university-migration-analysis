@@ -21,28 +21,8 @@
   --pole-mid: #f0efec;
 }
 
-/* 暗色の値。OS 設定と、画面上の配色トグルの両方から適用する。 */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --surface-1: #1a1a19;
-    --plane: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --muted: #898781;
-    --gridline: #2c2c2a;
-    --axis: #383835;
-    --border: rgba(255, 255, 255, 0.10);
-    --accent: #3987e5;
-    --diagonal: #43423e;
-    --national: #3987e5;
-    --public: #d95926;
-    --private: #199e70;
-    --pole-in: #3987e5;
-    --pole-out: #e66767;
-    --pole-mid: #383835;
-  }
-}
+/* 暗色の値。既定は明色で、画面上の配色トグルを押したときだけ暗色に切り替える。
+   OS 設定には追従しない（初期表示が環境で変わらないようにするため）。 */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --surface-1: #1a1a19;
