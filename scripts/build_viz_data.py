@@ -40,6 +40,8 @@ def main() -> None:
     capacity_rows = load_rows(args.processed_dir / "capacity_all.csv")
     schools_path = args.processed_dir / "schools_2025.csv"
     schools_rows = load_rows(schools_path) if schools_path.exists() else []
+    paths_path = args.processed_dir / "paths_all.csv"
+    paths_rows = load_rows(paths_path) if paths_path.exists() else []
     if sum(int(r["entrants_from_prefecture"]) for r in nodes) == 0:
         raise SystemExit("入力が空。先に build_od.py を実行すること")
 
@@ -89,6 +91,25 @@ def main() -> None:
             "private": [capacity["private"][year] for year in years],
         },
     }
+
+    # 出身高校所在地から見た進路の内訳。matrix の行方向と同じ主語で、その分母にあたる。
+    if paths_rows:
+        path_fields = (
+            "graduates", "university", "senmon", "senshu_general",
+            "training", "employed", "other", "unknown",
+        )
+        paths = {field: {year: [0] * len(PREFECTURES) for year in years} for field in path_fields}
+        path_years = sorted({int(row["year"]) for row in paths_rows})
+        if path_years != years:
+            raise SystemExit(f"進路データの年度が OD と揃わない: {path_years} vs {years}")
+        for row in paths_rows:
+            year = int(row["year"])
+            position = index[row["prefecture"]]
+            for field in path_fields:
+                paths[field][year][position] = int(row[field])
+        payload["paths"] = {
+            field: [paths[field][year] for year in years] for field in path_fields
+        }
 
     # 学校数は単年度（令和7年度）のみ。年次の入れ替わりがないので配列1本で持つ。
     if schools_rows:

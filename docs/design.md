@@ -30,9 +30,12 @@
 | `matrix` | `number[11][47][47]` | `[年][出身高校所在地][大学所在地]`。対角は県内進学 |
 | `local` / `outbound` / `inbound` / `netInflow` | `number[11][47]` | 県内進学 / 流出 / 流入 / 純流入 |
 | `capacity` | `{total, national, public, private}` 各 `number[11][47]` | 大学所在地から見た入学者数。「その他」を含む |
+| `paths` | `{graduates, university, senmon, senshu_general, training, employed, other, unknown}` 各 `number[11][47]` | 出身高校所在地から見た卒業後の進路。`matrix` の行方向と同じ主語で、その分母にあたる |
 | `schools` | `{year: 2025, high_schools, high_national, high_public, high_private, universities, university_national, university_public, university_private}` 各 `number[47]` | 学校数。2025年度のみ |
 
 `schools` だけ単年度である。ここが時間軸の非対称の原因になっている。
+
+`paths` は `matrix` の行合計と主語が同じだが、数は一致しない。OD 表は過年度卒（浪人）を含む入学者数で、`paths` は当年3月卒業者の進路だからである。`paths.university` には通信教育部や高等学校専攻科への進学も含む。差分を見るぶんには問題ないが、水準を引き算してはいけない。
 
 ## 着手前の現状
 
