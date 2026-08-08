@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大学進学の都道府県間フロー 2015-2025</title>
-<link rel="stylesheet" href="shared/base.css?v=a63ffd52">
+<link rel="stylesheet" href="shared/base.css?v=c6e90a9e">
 <style>
   /* 図の面はパネルと同じ背景色なので、境目がないと「どこで切れているか」が読めない。
      レイアウトを動かさないよう border ではなく box-shadow で縁を引く。 */
@@ -32,21 +32,8 @@
   <div id="viz-chrome"></div>
 
   <div class="panel">
-    <p class="about">
-      ノードが都道府県、線が「出身高校の所在地 → 入学した大学の所在地」の流れ。
-      矢じりの向きが流れの向き、線の太さと濃さが人数、
-      ノードの大きさがその県の送り出しと受け入れの合計、ノードの色が純流入（流入 − 流出）を表す。
-      線は500人以上の流れだけを引く。
-      県を選んだときだけ、その県に出入りする30人以上の流れを全部出す。
-    </p>
-
     <p class="hints">
-      <span>県にカーソルを乗せると内訳</span>
-      <span>クリックでその県の流れだけ、再クリックで解除</span>
-      <span>ホイールで拡大縮小</span>
-      <span>ドラッグで移動</span>
-      <span>拡大すると右下に全体図</span>
-      <span>ダブルクリックで全国に戻る</span>
+      <span>都道府県ノード: マウスオーバーで詳細表示、クリックで表示切り替え</span>
     </p>
 
     <div class="chart">
@@ -65,7 +52,6 @@
       <span class="key">
         <span class="line" style="background: var(--muted)"></span>県間の流れ（太く濃いほど人数が多い）
       </span>
-      <span class="key">矢じりの向きが流れの向き</span>
     </div>
 
     <details>
@@ -79,7 +65,8 @@
     下敷きの地図も同じだけ動かして破線の枠で囲ってある。枠の中だけ位置が実際と異なる。
     地図は都道府県の境界（<a href="https://github.com/dataofjapan/land">dataofjapan/land</a>）を
     間引いたもので、遠い島（北方領土・小笠原・大東・先島・奄美）は図が縮むため描いていない。
-    県を選ぶと、500人のしきい値を無視してその県のすべての流れを出し、その県の横に流入・流出の量を棒で出す。
+    線は500人以上の流れだけを引く。県を選ぶとそのしきい値を外して30人以上の流れをすべて出し、
+    その県の横に流入・流出の量を棒で出す。
     棒の目盛りは全年度・全県を通じた1県の最大（東京の流入）を満杯としており、県が変わっても伸び縮みしない。
     隣り合う県どうしの線は、点の間が数pxしかなく太さを見せる場所がないため、近い相手ほど大きく膨らませて描く。
     「その他」（海外・不明の高校出身）は除外している。
@@ -91,7 +78,7 @@
 <script src="shared/theme.js?v=044e1c62"></script>
 <script src="shared/format.js?v=a82415ab"></script>
 <script src="shared/state.js?v=bcd0f174"></script>
-<script src="shared/chrome.js?v=57d70975"></script>
+<script src="shared/chrome.js?v=cf8944fb"></script>
 <script src="shared/flowtable.js?v=91b3a135"></script>
 <script>
 (() => {
