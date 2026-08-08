@@ -352,18 +352,22 @@
     ratio: {
       key: "ratio",
       title: "受け入れ倍率（その県の大学の入学者 ÷ その県の高校からの進学者）",
+      // 相関を述べるときの主語。軸の題は定義まで書くので長い。ここは名前だけ。
+      label: "受け入れ倍率",
       ticks: [0.25, 0.5, 1, 1.5, 2, 2.5],
       format: (value) => value.toFixed(2),
     },
     density: {
       key: "density",
       title: "高校100校あたりの大学数",
+      label: "高校100校あたりの大学数",
       ticks: [0, 10, 20, 30, 40],
       format: (value) => value.toFixed(1),
     },
     advance: {
       key: "advance",
       title: "大学等進学率（その県の高校卒業者のうち大学等へ進んだ割合）",
+      label: "大学等進学率",
       // 定義域は全年度で固定する。年を動かしたとき、軸ではなく点が動いてほしい。
       domain: [0.36, 0.78],
       ticks: [0.4, 0.5, 0.6, 0.7],
@@ -462,15 +466,20 @@
 
     plot.innerHTML = parts.join("");
     const FINDINGS = {
-      ratio: "受け入れ倍率が1を割る県ほど県外へ出る。倍率1.0前後が均衡線で、"
-        + "それを超えるのは京都・東京・大阪・福岡など数県しかない。",
+      ratio: "倍率が1を割る県ほど県外へ出る。1.0前後が均衡線で、"
+        + "それを超えるのは京都・東京・大阪・福岡など数県しかない。"
+        + "ただし2つの指標は、どちらも「その県の高校からの進学者」を分母に置いているので、"
+        + "定義の上でも連動する。",
       density: "高校数に対して大学が薄い県ほど県外へ出る。"
         + "ただし大学数そのものは高校数とほぼ比例するため、数を数えるだけでは差が出ない。",
       advance: "進学率が高い県ほど県外へ出ない。ただし相関は弱く、"
         + "神奈川のように県内に大学があっても隣が東京だと出ていく県がある。"
         + "年を送ると全県が右へ動く。進学率は11年で全国8ポイント上がったが、県間の差はほとんど縮んでいない。",
     };
-    finding.innerHTML = `相関係数 <strong>r = ${stats.r.toFixed(2)}</strong>。${FINDINGS[measure.key]}`;
+    // 何と何の相関かを先に言う。横軸は切り替わるので、係数だけ出しても主語が定まらない。
+    finding.innerHTML = `横軸「${measure.label}」と縦軸「県外進学率」の相関`
+      + `（${N}都道府県）。<strong>r = ${stats.r.toFixed(2)}</strong>。`
+      + FINDINGS[measure.key];
 
     for (const circle of plot.querySelectorAll(".dot")) {
       const index = Number(circle.dataset.index);
