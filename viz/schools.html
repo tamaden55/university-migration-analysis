@@ -95,7 +95,6 @@
     <p class="hints">
       <span>円にカーソルを合わせると内訳</span>
       <span>クリックでその県を選択、再クリックで解除</span>
-      <span>選んだ県はヒートマップ・フロー図のタブへ引き継ぐ</span>
     </p>
 
     <div class="scatter">
@@ -104,11 +103,6 @@
     </div>
 
     <div class="legend">
-      <span class="key">
-        <span>純流入</span>
-        <span class="chip" style="background: var(--pole-out)"></span>流出超過
-        <span class="chip" style="background: var(--pole-in)"></span>流入超過
-      </span>
       <span class="key">円の大きさ: 高校卒業者数</span>
     </div>
 
@@ -268,7 +262,6 @@
   let items = itemsFor(SCHOOL_Y);
 
   const maxUniversities = Math.max(...items.map((item) => item.universities));
-  const maxNet = Math.max(...OD_DATA.netInflow.flat().map(Math.abs));
   // 円の大きさは年をまたいで比べられるよう、全年度を通じた最大で正規化する。
   const maxGraduates = Math.max(...P.graduates.flat());
 
@@ -281,13 +274,11 @@
 
   let theme = VIZ.theme.read();
 
-  // 東京の純流入が桁外れなので、符号付きのべき乗で中位の県にも色を届かせる。
-  function netColor(net) {
-    const position = Math.sign(net) * Math.pow(Math.abs(net) / maxNet, 0.4);
-    return position >= 0
-      ? VIZ.theme.blend(theme.poleMid, theme.poleIn, position)
-      : VIZ.theme.blend(theme.poleMid, theme.poleOut, -position);
-  }
+  // 円は1色。かつては純流入の正負で赤青に塗り分けていたが、受け入れ倍率が1を割ることと
+  // 流出超過であることは、517の県・年のうち514で同じ判定になる（残る3件も倍率1.03以内で、
+  // 「その他」出身を受け入れ側だけが含むことから来る差）。つまり色は、均衡線のどちら側に
+  // 点があるかを塗り直しているだけだった。読み取れる量が増えないのに channel を使わない。
+  const dotColor = () => VIZ.theme.withAlpha(theme.accent, 0.55);
 
   // ---- 棒 ------------------------------------------------------------------
   const barsBody = document.getElementById("bars-body");
@@ -429,7 +420,9 @@
     if (measure.key === "ratio" && domain[0] < 1 && domain[1] > 1) {
       parts.push(`<line class="balance" x1="${sx(1)}" x2="${sx(1)}" y1="${M.top}" `
         + `y2="${H - M.bottom}"></line>`);
-      parts.push(`<text class="tick" x="${sx(1) + 4}" y="${M.top + 10}">均衡（1.00）</text>`);
+      // 色を落としたぶん、流入超過がどちら側かはこの線の見出しで言う。
+      parts.push(`<text class="tick" x="${sx(1) + 4}" y="${M.top + 10}">`
+        + `均衡（1.00）。右が流入超過</text>`);
     }
 
     const stats = correlation(getX, getY);
@@ -465,26 +458,40 @@
     for (const item of items) {
       parts.push(`<circle class="dot${item.index === state.selected ? " selected" : ""}" `
         + `data-index="${item.index}" cx="${sx(getX(item))}" `
-        + `cy="${sy(getY(item))}" r="${radius(item)}" fill="${netColor(item.net)}"></circle>`);
+        + `cy="${sy(getY(item))}" r="${radius(item)}" fill="${dotColor()}"></circle>`);
     }
     parts.push(...labels);
 
     plot.innerHTML = parts.join("");
+    // 3つとも同じ順番で書く。1) 図を見て言えること 2) 関係の強さ 3) 気をつけること。
+    // r は数字を出すだけでは伝わらないので、読み方をその場に添える。
     const FINDINGS = {
-      ratio: "倍率が1を割る県ほど県外へ出る。1.0前後が均衡線で、"
-        + "それを超えるのは京都・東京・大阪・福岡など数県しかない。"
-        + "ただし2つの指標は、どちらも「その県の高校からの進学者」を分母に置いているので、"
-        + "定義の上でも連動する。",
-      density: "高校数に対して大学が薄い県ほど県外へ出る。"
-        + "ただし大学数そのものは高校数とほぼ比例するため、数を数えるだけでは差が出ない。",
-      advance: "進学率が高い県ほど県外へ出ない。ただし相関は弱く、"
-        + "神奈川のように県内に大学があっても隣が東京だと出ていく県がある。"
-        + "年を送ると全県が右へ動く。進学率は11年で全国8ポイント上がったが、県間の差はほとんど縮んでいない。",
+      ratio: {
+        read: "県内の大学が受け入れる人数が少ない県ほど、高校生は県外へ出ていく。",
+        note: "倍率が1.00を超える県、つまり出ていく人より入ってくる人が多い県は、"
+          + "京都・東京・大阪・福岡など数県しかない。"
+          + "ただし、この2つの数字はどちらも「その県の高校から大学へ進んだ人数」で割っている。"
+          + "分母が同じなので、片方が小さいと他方は大きく出やすい。"
+          + "右下がりのいくらかは、この作り方から来ている。",
+      },
+      density: {
+        read: "高校の数のわりに大学が少ない県ほど、高校生は県外へ出ていく。",
+        note: "ただし大学の数は高校の数におおむね比例するので、"
+          + "校数を数えるだけでは県ごとの差はあまり出ない。",
+      },
+      advance: {
+        read: "大学等進学率が高い県ほど、高校生は県外へ出ていかない。",
+        note: "ただし、ばらつきは大きい。"
+          + "神奈川のように、県内に大学があっても隣が東京なら出ていく県がある。"
+          + "年度を動かすと全県がそろって右へ動く。"
+          + "進学率はこの11年で全国8ポイント上がったが、県ごとの差はほとんど縮んでいない。",
+      },
     };
-    // 何と何の相関かを先に言う。横軸は切り替わるので、係数だけ出しても主語が定まらない。
-    finding.innerHTML = `横軸「${measure.label}」と縦軸「県外進学率」の相関`
-      + `（${N}都道府県）。<strong>r = ${stats.r.toFixed(2)}</strong>。`
-      + FINDINGS[measure.key];
+    const found = FINDINGS[measure.key];
+    finding.innerHTML = `${found.read}`
+      + `横軸「${measure.label}」との関係の強さは <strong>r = ${stats.r.toFixed(2)}</strong>`
+      + `（${N}都道府県で計算。r は −1 に近いほど、右下がりの関係がはっきりしている）。`
+      + found.note;
 
     for (const circle of plot.querySelectorAll(".dot")) {
       const index = Number(circle.dataset.index);
