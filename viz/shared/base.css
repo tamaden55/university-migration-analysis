@@ -3,6 +3,9 @@
 
 :root {
   color-scheme: light;
+  /* 3ページ共通の紙幅。ヒートマップの canvas（856px）が収まる幅に合わせてある。
+     ここだけ変えれば3ページとも同じだけ動く。ページ側で上書きしない。 */
+  --content-width: 980px;
   --surface-1: #fcfcfb;
   --plane: #f9f9f7;
   --text-primary: #0b0b0b;
@@ -55,7 +58,7 @@ body {
   line-height: 1.6;
 }
 
-.wrap { max-width: 980px; margin: 0 auto; }
+.wrap { max-width: var(--content-width); margin: 0 auto; }
 h1 { font-size: 20px; margin: 0 0 4px; letter-spacing: 0.01em; }
 h2 { font-size: 16px; margin: 0 0 4px; }
 .lede { color: var(--text-secondary); margin: 0 0 8px; max-width: 78ch; }
@@ -64,23 +67,39 @@ h2 { font-size: 16px; margin: 0 0 4px; }
 /* 上に貼り付ける。どのページも図がヘッダより下にあり、しかも縦に長い。
    年を送った効果は図の側に出るので、スライダと図が同時に見えないと操作にならない。
    地の色を敷いておかないと、下を通る内容が透ける。 */
+/* 操作は「見方の切り替え」と「年度」の2組だけに絞り、それぞれに見出しを付ける。
+   見出しのない裸のボタン帯を並べると、何を変える道具なのかが読めない。 */
 .chrome {
   position: sticky; top: 0; z-index: 5;
-  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px;
+  display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px 20px;
   margin: 14px 0 18px; padding: 10px 12px;
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: 0 6px 16px -12px rgba(0, 0, 0, 0.55);
 }
+.chrome .group { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.chrome .caption {
+  flex: 0 0 100%;
+  font-size: 11px; color: var(--muted); letter-spacing: 0.02em; line-height: 1.2;
+}
 .tabs { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
 .tabs a {
-  font: inherit; font-size: 13px; padding: 6px 12px;
+  display: flex; flex-direction: column; gap: 1px;
+  font: inherit; padding: 5px 12px;
   color: var(--text-secondary); text-decoration: none; white-space: nowrap;
 }
 .tabs a + a { border-left: 1px solid var(--axis); }
+.tabs .name { font-size: 13px; line-height: 1.25; }
+.tabs .sub { font-size: 10px; color: var(--muted); line-height: 1.2; }
 .tabs a[aria-current="page"] { background: var(--accent); color: #fff; }
-.chrome .note { font-size: 11px; color: var(--muted); max-width: 16em; line-height: 1.35; }
+.tabs a[aria-current="page"] .sub { color: rgba(255, 255, 255, 0.82); }
+/* 年度についての但し書き。スライダの下に敷き、どの操作の話かを位置で示す。 */
+.chrome .note {
+  flex: 0 0 100%;
+  font-size: 11px; color: var(--muted); max-width: 48ch; line-height: 1.35;
+}
+.chrome .push-right { align-self: center; }
 
 /* ---- 枠と操作 ------------------------------------------------------------ */
 .panel {
@@ -98,6 +117,14 @@ h2 { font-size: 16px; margin: 0 0 4px; }
 .field input[type="range"] { accent-color: var(--accent); width: 118px; }
 .field .value { font-variant-numeric: tabular-nums; color: var(--text-primary); min-width: 5.5em; }
 
+/* 切り替えの真横に、いま何を見ているのかを言い切る1行を置く。
+   ボタンの語だけでは、2つの選択肢が何で違うのかが読めない。 */
+.controls .note { font-size: 12px; color: var(--muted); max-width: 52ch; line-height: 1.4; }
+
+/* 図の読み方。図と同じ枠の中、図のすぐ上に置く。ページ冒頭に置くと、
+   読むときには図が見えず、図を見るときには文が視野の外にある。 */
+.about { margin: 12px 0 0; font-size: 12px; color: var(--text-secondary); max-width: 78ch; }
+
 .segmented { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
 .segmented button {
   appearance: none; border: 0; background: transparent; color: var(--text-secondary);
@@ -113,11 +140,12 @@ h2 { font-size: 16px; margin: 0 0 4px; }
 .button[disabled] { opacity: 0.45; cursor: default; }
 .push-right { margin-left: auto; }
 
-.timeline { flex: 1 1 240px; display: flex; align-items: center; gap: 12px; min-width: 240px; }
-.timeline input[type="range"] { flex: 1; accent-color: var(--accent); }
+/* 年度はスライダのすぐ右横。動かした手と、変わった年が同じ視線の中に入る。 */
+.timeline { flex: 1 1 300px; min-width: 260px; }
+.timeline input[type="range"] { flex: 1 1 140px; accent-color: var(--accent); }
 .timeline input[type="range"][disabled] { opacity: 0.4; }
-.year { font-size: 22px; font-variant-numeric: tabular-nums; min-width: 4.2em; text-align: right; }
-.year small { display: block; font-size: 11px; color: var(--muted); line-height: 1.2; }
+.year { font-size: 20px; font-variant-numeric: tabular-nums; min-width: 5.2em; }
+.year small { font-size: 11px; color: var(--muted); margin-left: 2px; }
 
 /* ---- 図まわり ------------------------------------------------------------ */
 .chart { position: relative; margin-top: 10px; }

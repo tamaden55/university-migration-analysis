@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>高校と大学の設置数、そして流出 2025年度</title>
-<link rel="stylesheet" href="shared/base.css?v=f5254cd5">
+<link rel="stylesheet" href="shared/base.css?v=a63ffd52">
 <style>
   .panel + .panel { margin-top: 20px; }
 
@@ -69,12 +69,6 @@
 <body>
 <div class="wrap">
   <h1>高校と大学の設置数、そして流出</h1>
-  <p class="lede">
-    大学の受け皿の厚みと、高校を出た人の進路を、都道府県ごとに突き合わせる。
-    散布図と表は2015年度から11年ぶん動く。下段の高校数・大学数だけは2025年度（令和7年度）のみ。
-    学校基本調査「都道府県別 状況別卒業者数」（進路）、「都道府県別学校数」（高校）、
-    「都道府県別 学校数及び学生数」（大学）による。
-  </p>
 
   <div id="viz-chrome"></div>
 
@@ -91,9 +85,16 @@
       </div>
     </div>
 
+    <p class="about">
+      大学の受け皿の厚みと、高校を出た人の進路を、都道府県ごとに突き合わせる。
+      散布図と表は2015年度から11年ぶん動く。下段の高校数・大学数だけは2025年度（令和7年度）のみ。
+      学校基本調査「都道府県別 状況別卒業者数」（進路）、「都道府県別学校数」（高校）、
+      「都道府県別 学校数及び学生数」（大学）による。
+    </p>
+
     <p class="hints">
       <span>円にカーソルを合わせると内訳</span>
-      <span>クリックでその県を選択</span>
+      <span>クリックでその県を選択、再クリックで解除</span>
       <span>選んだ県はヒートマップ・フロー図のタブへ引き継ぐ</span>
     </p>
 
@@ -109,7 +110,6 @@
         <span class="chip" style="background: var(--pole-in)"></span>流入超過
       </span>
       <span class="key">円の大きさ: 高校卒業者数</span>
-      <button type="button" class="button push-right" id="clear" disabled>選択を解除</button>
     </div>
 
     <p class="finding" id="finding"></p>
@@ -193,8 +193,8 @@
 <script src="data.js?v=220726bf"></script>
 <script src="shared/theme.js?v=044e1c62"></script>
 <script src="shared/format.js?v=a82415ab"></script>
-<script src="shared/state.js?v=081c6afe"></script>
-<script src="shared/chrome.js?v=3fafdd8e"></script>
+<script src="shared/state.js?v=bcd0f174"></script>
+<script src="shared/chrome.js?v=57d70975"></script>
 <script>
 (() => {
   "use strict";
@@ -531,7 +531,6 @@
   }
 
   // ---- 選択県 --------------------------------------------------------------
-  const clearButton = document.getElementById("clear");
   const dataBody = document.getElementById("data-body");
 
   function renderTable() {
@@ -563,14 +562,11 @@
 
   function setSelected(index, { silent = false } = {}) {
     state.selected = index;
-    clearButton.disabled = index === null;
     if (!silent) VIZ.state.patch({ pref: index === null ? null : format.toJis(index) });
     renderBars();
     renderPlot();
     renderTable();
   }
-
-  clearButton.addEventListener("click", () => setSelected(null));
 
   // ---- 起動 ----------------------------------------------------------------
   // 年で動くのは散布図と表だけ。棒は学校数なので2025年度に据え置く。
@@ -599,7 +595,6 @@
   setSort(state.sort, { silent: true });
   setAxis(state.axis, { silent: true });
   setSelected(state.selected, { silent: true });
-  clearButton.disabled = state.selected === null;
 })();
 </script>
 </body>

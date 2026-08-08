@@ -4,13 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大学進学の都道府県間フロー 2015-2025</title>
-<link rel="stylesheet" href="shared/base.css?v=f5254cd5">
+<link rel="stylesheet" href="shared/base.css?v=a63ffd52">
 <style>
-  /* 図が主役のページなので、読み物の幅（980px）ではなく画面の幅を使う。
-     リード文と脚注は .lede / footer 側の字数制限で読める幅に留まる。 */
-  .wrap { max-width: min(1560px, 100%); }
-  footer { max-width: 96ch; }
-
   /* 図の面はパネルと同じ背景色なので、境目がないと「どこで切れているか」が読めない。
      レイアウトを動かさないよう border ではなく box-shadow で縁を引く。 */
   canvas {
@@ -19,8 +14,6 @@
     border-radius: 6px;
   }
   canvas.grabbing { cursor: grabbing; }
-  .field #zoom-value { min-width: 3.4em; color: var(--muted); }
-  .field .note { font-size: 12px; color: var(--muted); }
 
   .legend .scale { display: inline-block; }
   .legend .bar {
@@ -35,42 +28,21 @@
 <body>
 <div class="wrap">
   <h1>大学進学の都道府県間フロー</h1>
-  <p class="lede">
-    ノードが都道府県、線が「出身高校の所在地 → 入学した大学の所在地」の流れ。
-    矢じりの向きが流れの向き、線の太さと濃さが人数、ノードの色が純流入（流入 − 流出）を表す。
-  </p>
 
   <div id="viz-chrome"></div>
 
   <div class="panel">
-    <div class="controls">
-      <span class="field">
-        <span class="segmented" role="group" aria-label="表示範囲">
-          <button type="button" id="area-all" aria-pressed="true">全国</button>
-          <button type="button" id="area-east" aria-pressed="false">東日本</button>
-          <button type="button" id="area-west" aria-pressed="false">西日本</button>
-        </span>
-        <span class="value" id="zoom-value">1.0倍</span>
-      </span>
-      <span class="field">
-        ノードの大きさ
-        <span class="segmented" role="group" aria-label="ノードの大きさが表すもの">
-          <button type="button" id="size-send" aria-pressed="true">送り出し</button>
-          <button type="button" id="size-take" aria-pressed="false">受け入れ</button>
-        </span>
-        <span class="note" id="size-note"></span>
-      </span>
-      <label class="field">
-        しきい値
-        <input type="range" id="threshold" min="200" max="5000" step="100" value="500">
-        <span class="value" id="threshold-value">500人以上</span>
-      </label>
-      <button type="button" class="button" id="clear" disabled>選択を解除</button>
-    </div>
+    <p class="about">
+      ノードが都道府県、線が「出身高校の所在地 → 入学した大学の所在地」の流れ。
+      矢じりの向きが流れの向き、線の太さと濃さが人数、
+      ノードの大きさがその県の送り出しと受け入れの合計、ノードの色が純流入（流入 − 流出）を表す。
+      線は500人以上の流れだけを引く。
+      県を選んだときだけ、その県に出入りする30人以上の流れを全部出す。
+    </p>
 
     <p class="hints">
       <span>県にカーソルを乗せると内訳</span>
-      <span>クリックでその県の流れだけ</span>
+      <span>クリックでその県の流れだけ、再クリックで解除</span>
       <span>ホイールで拡大縮小</span>
       <span>ドラッグで移動</span>
       <span>拡大すると右下に全体図</span>
@@ -107,13 +79,10 @@
     下敷きの地図も同じだけ動かして破線の枠で囲ってある。枠の中だけ位置が実際と異なる。
     地図は都道府県の境界（<a href="https://github.com/dataofjapan/land">dataofjapan/land</a>）を
     間引いたもので、遠い島（北方領土・小笠原・大東・先島・奄美）は図が縮むため描いていない。
-    表示範囲のボタンは、その地域が収まる位置へ視点を移すだけで、県や流れを絞り込みはしない。
-    範囲外へ向かう流れも切れずに描かれる。
-    県を選ぶと、しきい値を無視してその県のすべての流れを出し、その県の横に流入・流出の量を棒で出す。
+    県を選ぶと、500人のしきい値を無視してその県のすべての流れを出し、その県の横に流入・流出の量を棒で出す。
     棒の目盛りは全年度・全県を通じた1県の最大（東京の流入）を満杯としており、県が変わっても伸び縮みしない。
     隣り合う県どうしの線は、点の間が数pxしかなく太さを見せる場所がないため、近い相手ほど大きく膨らませて描く。
-    年をまたぐ動きは太さと色の補間で見せているが、
-    数値は常に最寄りの年度の実数である。「その他」（海外・不明の高校出身）は除外している。
+    「その他」（海外・不明の高校出身）は除外している。
   </footer>
 </div>
 
@@ -121,8 +90,8 @@
 <script src="japan.js?v=751a735b"></script>
 <script src="shared/theme.js?v=044e1c62"></script>
 <script src="shared/format.js?v=a82415ab"></script>
-<script src="shared/state.js?v=081c6afe"></script>
-<script src="shared/chrome.js?v=3fafdd8e"></script>
+<script src="shared/state.js?v=bcd0f174"></script>
+<script src="shared/chrome.js?v=57d70975"></script>
 <script src="shared/flowtable.js?v=91b3a135"></script>
 <script>
 (() => {
@@ -173,9 +142,6 @@
       if (inset) INSET_RINGS.push(ring);
     }
   }
-
-  // 東日本 = 北海道〜愛知、西日本 = 三重〜沖縄。中部と近畿の境で切っている。
-  const EAST_END = OD_DATA.prefectures.indexOf("三重県");
 
   const PAD = 26;
 
@@ -329,41 +295,16 @@
     return true;
   }
 
-  // 与えた県群の外接範囲が収まる変換を作る。地域プリセットの実体。
-  const FIT_MARGIN = 34;
-
-  function fitTo(indices) {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const index of indices) {
-      const point = points[index];
-      minX = Math.min(minX, point.x);
-      maxX = Math.max(maxX, point.x);
-      minY = Math.min(minY, point.y);
-      maxY = Math.max(maxY, point.y);
-    }
-    const spanX = maxX - minX + FIT_MARGIN * 2;
-    const spanY = maxY - minY + FIT_MARGIN * 2;
-    view.scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(WIDTH / spanX, HEIGHT / spanY)));
-    view.tx = WIDTH / 2 - (minX + maxX) / 2 * view.scale;
-    view.ty = HEIGHT / 2 - (minY + maxY) / 2 * view.scale;
-    clampView();
-  }
-
   // ---- 尺度 ----------------------------------------------------------------
   // 年をまたいで比較できるよう、太さ・大きさ・色の定義域は全年度で固定する。
   let maxMovers = 0;
-  let maxEntrants = 0;
-  let maxCapacity = 0;
+  let maxVolume = 0;   // 1県の「送り出し＋受け入れ」の全国最大。ノードの大きさの満杯
   let maxNet = 0;
   let maxSide = 0;   // 1県の流入・流出の全国最大。選択県の量を測る物差しに使う
   for (let y = 0; y < YEARS.length; y += 1) {
     for (let i = 0; i < N; i += 1) {
       const entrants = OD_DATA.local[y][i] + OD_DATA.outbound[y][i];
-      if (entrants > maxEntrants) maxEntrants = entrants;
-      if (OD_DATA.capacity.total[y][i] > maxCapacity) maxCapacity = OD_DATA.capacity.total[y][i];
+      maxVolume = Math.max(maxVolume, entrants + OD_DATA.capacity.total[y][i]);
       maxNet = Math.max(maxNet, Math.abs(OD_DATA.netInflow[y][i]));
       maxSide = Math.max(maxSide, OD_DATA.inbound[y][i], OD_DATA.outbound[y][i]);
       for (let j = 0; j < N; j += 1) {
@@ -373,6 +314,10 @@
   }
 
   const FOCUS_FLOOR = 30;   // 県を選んだときに描く最小人数
+  // 全体を出すときの最小人数。かつては手で動かせるつまみだったが、動かしても図の
+  // 見え方が大きく変わらず、何のための操作か伝わらなかったので固定値にした。
+  // 値そのものは図の外（読み方の文と脚注）に書いてある。
+  const THRESHOLD = 500;
 
   // どこかの年度で最小しきい値に届く組だけを候補にする。毎フレーム 2,000 組を走らない。
   const candidates = [];
@@ -393,8 +338,8 @@
   // べき乗（0.4）は純流入の配色と同じ考えで、中位の流れにも濃さを届かせるため。
   // 定義域は太さと同じく全年度で固定する。年をまたいで濃さを比べられるようにする。
   const edgeWeight = (movers) => Math.pow(Math.max(0, movers) / maxMovers, 0.4);
-  // 送り出し（その県の高校から進学した人数）と受け入れ（その県の大学に入った人数）を
-  // 切り替える。定義域はモードごとに全年度で固定する。
+  // ノードの大きさは、送り出し（その県の高校から進学した人数）と
+  // 受け入れ（その県の大学に入った人数）の合計。定義域は全年度で固定する。
   // 密集はズームで解くので、等倍時の大きさは重なりぎりぎりまで上げてある。
   const RADIUS_MIN = 4.5;
   const RADIUS_SPAN = 11.5;
@@ -406,9 +351,9 @@
   // ---- 状態 ----------------------------------------------------------------
   const saved = VIZ.state.get();
   const state = {
-    preset: saved.area,   // 押されている表示範囲ボタン。手で動かしたら null
-    size: saved.size,
-    threshold: saved.threshold,
+    // 全国が収まる初期の視点にいるかどうか。拡大・移動した時点で false になる。
+    // 枠の大きさが変わったときの振る舞いが、ここで変わる。
+    home: true,
     focus: saved.pref === null ? null : format.toIndex(saved.pref),
     hover: null,
   };
@@ -451,22 +396,14 @@
     return a + (b - a) * f;
   }
 
-  function sizeAt(i) {
-    return state.size === "send" ? entrantsAt(i) : capacityAt(i);
+  // 送り出しと受け入れの合計。かつては2つを切り替えられたが、東京以外では差が小さく、
+  // 切り替えても何が変わったのか読み取れなかった。県の進学人口の総量として1つに束ねる。
+  function volumeAt(i) {
+    return entrantsAt(i) + capacityAt(i);
   }
 
-  // 大きさの切り替えは、2つの定義の間を行き来する連続量として持つ。
-  // 0 が送り出し、1 が受け入れ。切り替えた瞬間に飛ばさず移すことで、
-  // どの県が膨らんでどの県が縮んだかが目で追える。何が変わったか分からない、
-  // という状態を説明文だけで埋めようとしない。
-  let sizeMix = state.size === "send" ? 0 : 1;
-
   function nodeRadiusOf(index) {
-    if (sizeMix <= 0) return radiusOf(entrantsAt(index), maxEntrants);
-    if (sizeMix >= 1) return radiusOf(capacityAt(index), maxCapacity);
-    const send = radiusOf(entrantsAt(index), maxEntrants);
-    const take = radiusOf(capacityAt(index), maxCapacity);
-    return send + (take - send) * sizeMix;
+    return radiusOf(volumeAt(index), maxVolume);
   }
 
   // 表示するエッジ。県を選んでいるときは、その県に触れる流れだけを最小人数まで下げて出す。
@@ -477,7 +414,7 @@
       const touchesFocus = state.focus !== null && (i === state.focus || j === state.focus);
       if (state.focus !== null && !touchesFocus) continue;
       const movers = movesAt(i, j);
-      if (movers < (touchesFocus ? FOCUS_FLOOR : state.threshold)) continue;
+      if (movers < (touchesFocus ? FOCUS_FLOOR : THRESHOLD)) continue;
       shown.push({ i, j, movers });
     }
     return shown;
@@ -485,9 +422,9 @@
 
   // ---- 描画 ----------------------------------------------------------------
   // 枠が変わったら投影を組み直す。組み直しの前後で見ている場所が飛ばないよう、
-  // 画面中心の地点を緯度経度で覚えておいて当て直す。プリセット中はプリセットを取り直す。
+  // 画面中心の地点を緯度経度で覚えておいて当て直す。初期の視点のままなら全国を取り直す。
   function resize() {
-    const center = state.preset === null && proj
+    const center = !state.home && proj
       ? worldToGeo((WIDTH / 2 - view.tx) / view.scale, (HEIGHT / 2 - view.ty) / view.scale)
       : null;
 
@@ -501,20 +438,32 @@
     canvas.style.height = `${HEIGHT}px`;
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-    if (state.preset === "all") {
+    if (state.home) {
       view.scale = 1;
       view.tx = 0;
       view.ty = 0;
-    } else if (state.preset !== null) {
-      fitTo(presetIndices[state.preset]);
     } else if (center) {
       const world = geoToWorld(center.lat, center.lon);
       view.tx = WIDTH / 2 - world.x * view.scale;
       view.ty = HEIGHT / 2 - world.y * view.scale;
     }
     clampView();
-    syncView();
     draw();
+  }
+
+  // 全国が収まる初期の視点へ戻す。ダブルクリックの受け皿。
+  function goHome() {
+    state.home = true;
+    view.scale = 1;
+    view.tx = 0;
+    view.ty = 0;
+    draw();
+  }
+
+  // 手で拡大・移動した時点で、初期の視点ではなくなる。
+  // ズーム位置そのものはハッシュに載せない。共有時に意図しない拡大を強制しないため。
+  function leaveHome() {
+    state.home = false;
   }
 
   // 制御点を中点から垂直にずらす。向きを固定するので A→B と B→A が重ならない。
@@ -799,8 +748,7 @@
     view.tx = WIDTH / 2 - (point.x - box.x) / k * view.scale;
     view.ty = HEIGHT / 2 - (point.y - box.y) / k * view.scale;
     clampView();
-    clearPreset();
-    syncView();
+    leaveHome();
     draw();
   }
 
@@ -944,7 +892,7 @@
     for (const edge of edges) { touched.add(edge.i); touched.add(edge.j); }
 
     const order = Array.from({ length: N }, (_, index) => index)
-      .sort((a, b) => sizeAt(b) - sizeAt(a));
+      .sort((a, b) => volumeAt(b) - volumeAt(a));
     // 県を選んでいるとき、やり取りのない県は沈める。ラベルも出ないので浮いて見えない。
     for (const index of order) {
       drawNode(index, screen, mark,
@@ -1080,8 +1028,7 @@
     // 上限・下限に張り付いていて動かせないときは、ページのスクロールに譲る。
     if (!zoomAt(factor, point.x, point.y)) return;
     event.preventDefault();
-    clearPreset();
-    syncView();   // clearPreset はプリセットが外れる1回しか通らない。倍率表示は毎回要る
+    leaveHome();
     hoverAt(event);
     draw();
   }, { passive: false });
@@ -1117,7 +1064,7 @@
     view.tx = drag.tx + dx * factor;
     view.ty = drag.ty + dy * factor;
     clampView();
-    if (drag.moved >= DRAG_SLOP) clearPreset();
+    if (drag.moved >= DRAG_SLOP) leaveHome();
     draw();
   });
 
@@ -1147,135 +1094,14 @@
 
   canvas.addEventListener("dblclick", (event) => {
     event.preventDefault();
-    setPreset("all");
+    goHome();
   });
-
-  const clearButton = document.getElementById("clear");
 
   function setFocus(index) {
     state.focus = index;
-    clearButton.disabled = index === null;
     VIZ.state.patch({ pref: index === null ? null : format.toJis(index) });
     draw();
   }
-
-  clearButton.addEventListener("click", () => setFocus(null));
-
-  // ---- 表示範囲 ------------------------------------------------------------
-  // 地域ボタンは絞り込みではなく視点の設定。県も流れも消さず、収まる位置へ寄せるだけ。
-  const areaButtons = {
-    all: document.getElementById("area-all"),
-    east: document.getElementById("area-east"),
-    west: document.getElementById("area-west"),
-  };
-  const zoomValue = document.getElementById("zoom-value");
-
-  const presetIndices = {
-    all: Array.from({ length: N }, (_, index) => index),
-    east: Array.from({ length: EAST_END }, (_, index) => index),
-    west: Array.from({ length: N - EAST_END }, (_, index) => index + EAST_END),
-  };
-
-  function syncView() {
-    zoomValue.textContent = `${view.scale.toFixed(1)}倍`;
-    for (const [key, button] of Object.entries(areaButtons)) {
-      button.setAttribute("aria-pressed", key === state.preset ? "true" : "false");
-    }
-  }
-
-  // 手で拡大・移動したら、どのプリセットでもない状態になる。
-  // ズーム位置そのものはハッシュに載せない。共有時に意図しない拡大を強制しないため。
-  function clearPreset() {
-    if (state.preset === null) return;
-    state.preset = null;
-    VIZ.state.patch({ area: "all" });
-    syncView();
-  }
-
-  function setPreset(name, { silent = false } = {}) {
-    state.preset = name;
-    if (name === "all") {
-      view.scale = 1;
-      view.tx = 0;
-      view.ty = 0;
-    } else {
-      fitTo(presetIndices[name]);
-    }
-    if (!silent) VIZ.state.patch({ area: name });
-    syncView();
-    draw();
-  }
-
-  for (const name of Object.keys(areaButtons)) {
-    areaButtons[name].addEventListener("click", () => setPreset(name));
-  }
-
-  const sizeButtons = {
-    send: document.getElementById("size-send"),
-    take: document.getElementById("size-take"),
-  };
-  const sizeNote = document.getElementById("size-note");
-
-  // ボタンの語だけでは何の大きさか分からない。いま何を表しているかを地の文で添える。
-  const SIZE_MEANING = {
-    send: "その県の高校から大学へ進んだ人数",
-    take: "その県の大学に入学した人数",
-  };
-
-  const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const SIZE_TWEEN_MS = 420;
-  let sizeTween = 0;
-
-  function setSize(size, { silent = false, animate = false } = {}) {
-    state.size = size;
-    for (const [key, other] of Object.entries(sizeButtons)) {
-      other.setAttribute("aria-pressed", key === size ? "true" : "false");
-    }
-    sizeNote.textContent = SIZE_MEANING[size];
-    if (!silent) VIZ.state.patch({ size });
-
-    const target = size === "send" ? 0 : 1;
-    cancelAnimationFrame(sizeTween);
-    if (!animate || REDUCED_MOTION.matches) {
-      sizeMix = target;
-      draw();
-      return;
-    }
-
-    // 飛ばさずに移す。どの県が膨らみ、どの県が縮んだかを目で追えるようにする。
-    const from = sizeMix;
-    let started = 0;
-    const step = (stamp) => {
-      if (!started) started = stamp;
-      const progress = Math.min(1, (stamp - started) / SIZE_TWEEN_MS);
-      const eased = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      sizeMix = from + (target - from) * eased;
-      draw();
-      if (progress < 1) sizeTween = requestAnimationFrame(step);
-    };
-    sizeTween = requestAnimationFrame(step);
-  }
-
-  for (const size of Object.keys(sizeButtons)) {
-    sizeButtons[size].addEventListener("click", () => setSize(size, { animate: true }));
-  }
-
-  const thresholdInput = document.getElementById("threshold");
-  const thresholdValue = document.getElementById("threshold-value");
-
-  function setThreshold(value, { silent = false } = {}) {
-    state.threshold = value;
-    thresholdInput.value = String(value);
-    thresholdValue.textContent = `${format.count(value)}人以上`;
-    if (!silent) VIZ.state.patch({ threshold: value });
-    draw();
-  }
-
-  // つまみを動かしている間は描き直すだけ。手を離したところで URL に書く。
-  thresholdInput.addEventListener("input", () => setThreshold(Number(thresholdInput.value), { silent: true }));
-  thresholdInput.addEventListener("change", () => setThreshold(Number(thresholdInput.value)));
 
   // ---- 表 ------------------------------------------------------------------
   const tableHost = document.getElementById("table-host");
@@ -1283,13 +1109,10 @@
 
   // draw() は指を動かすたびに走る。表の中身が変わるのは年度・注目県・流れの母集団が
   // 動いたときだけなので、そこが同じ間は組み直さない。
-  // しきい値は下げると流れが増えるだけなので、本数が同じなら同じ集合とみなせる。
   let tableKey = "";
 
   function renderTable(edges) {
     const year = VIZ.chrome.yearIndex();
-    // 県を選んでいるときの中身は流れの母集団に依らない。再生中の補間で本数だけが
-    // 揺れても組み直さないよう、その場合は本数を鍵に入れない。
     const key = state.focus === null ? `${year}|-|${edges.length}` : `${year}|${state.focus}`;
     if (key === tableKey) return;
     tableKey = key;
@@ -1301,7 +1124,7 @@
       focus: state.focus,
       flows: edges,
       limit: state.focus === null ? 30 : 20,
-      lead: `しきい値 ${format.count(state.threshold)} 人以上の流れ。`,
+      lead: `${format.count(THRESHOLD)} 人以上の流れ。`,
     });
   }
 
@@ -1333,10 +1156,7 @@
     },
   });
 
-  // URL から復元する。ハッシュに書かれていた値はそのまま書き戻すので silent で当てる。
-  setSize(state.size, { silent: true });
-  setThreshold(state.threshold, { silent: true });
-  setPreset(state.preset, { silent: true });
+  // URL から復元するのは注目県だけ。視点は常に全国から始める。
   setFocus(state.focus);
   resize();
 })();
