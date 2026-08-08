@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>高校と大学の設置数、そして流出 2025年度</title>
+<title>高校と大学の設置数、そして県外進学 2015-2025</title>
 <link rel="stylesheet" href="shared/base.css?v=c6e90a9e">
 <style>
   .panel + .panel { margin-top: 20px; }
@@ -68,26 +68,30 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>高校と大学の設置数、そして流出</h1>
+  <h1>高校と大学の設置数、そして県外進学</h1>
 
   <div id="viz-chrome"></div>
 
   <div class="panel">
     <div class="head">
       <div>
-        <h2>受け皿の厚みと県外流出</h2>
+        <h2>県外進学率を、3つの指標と見くらべる</h2>
         <span class="lede" id="year-note"></span>
       </div>
-      <div class="segmented" role="group" aria-label="横軸">
-        <button type="button" id="x-ratio" aria-pressed="true">受け入れ倍率</button>
-        <button type="button" id="x-density" aria-pressed="false">高校100校あたり大学数</button>
-        <button type="button" id="x-advance" aria-pressed="false">大学等進学率</button>
-      </div>
+      <span class="field">
+        横軸
+        <span class="segmented" role="group" aria-label="横軸">
+          <button type="button" id="x-ratio" aria-pressed="true">受け入れ倍率</button>
+          <button type="button" id="x-density" aria-pressed="false">高校100校あたり大学数</button>
+          <button type="button" id="x-advance" aria-pressed="false">大学等進学率</button>
+        </span>
+      </span>
     </div>
 
     <p class="about">
-      円ひとつが1つの都道府県。縦軸はその県の高校生が県外の大学へ進んだ割合で、
-      横軸は右上のボタンで3つの指標から選ぶ。
+      円ひとつが1つの都道府県。
+      縦軸は県外進学率（その県の高校生のうち、県外の大学へ進んだ人の割合）。
+      横軸は右のボタンで選んだ指標。
     </p>
 
     <p class="hints">
@@ -97,7 +101,7 @@
     </p>
 
     <div class="scatter">
-      <svg id="plot" viewBox="0 0 720 460" role="img" aria-label="受け皿の厚みと県外進学率の散布図"></svg>
+      <svg id="plot" viewBox="0 0 720 460" role="img" aria-label="県外進学率と、選んだ指標の散布図"></svg>
       <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
     </div>
 
@@ -152,11 +156,14 @@
         <h2>都道府県別の大学数（設置者別）</h2>
         <span class="lede" id="bars-note"></span>
       </div>
-      <div class="segmented" role="group" aria-label="並び順">
-        <button type="button" id="sort-count" aria-pressed="true">大学数順</button>
-        <button type="button" id="sort-density" aria-pressed="false">高校100校あたり順</button>
-        <button type="button" id="sort-code" aria-pressed="false">北から順</button>
-      </div>
+      <span class="field">
+        並び順
+        <span class="segmented" role="group" aria-label="並び順">
+          <button type="button" id="sort-count" aria-pressed="true">大学数順</button>
+          <button type="button" id="sort-density" aria-pressed="false">高校100校あたり順</button>
+          <button type="button" id="sort-code" aria-pressed="false">北から順</button>
+        </span>
+      </span>
     </div>
 
     <div class="legend">
@@ -194,7 +201,7 @@
 <script src="shared/theme.js?v=044e1c62"></script>
 <script src="shared/format.js?v=a82415ab"></script>
 <script src="shared/state.js?v=bcd0f174"></script>
-<script src="shared/chrome.js?v=cf8944fb"></script>
+<script src="shared/chrome.js?v=b8a28d20"></script>
 <script>
 (() => {
   "use strict";
