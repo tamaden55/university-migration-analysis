@@ -15,7 +15,7 @@ VIZ.chrome = (() => {
   const TABS = [
     { view: "heatmap", label: "ヒートマップ", sub: "県×県の行列" },
     { view: "graph", label: "フロー図", sub: "地図上の流れ" },
-    { view: "schools", label: "設置数", sub: "受け皿と進路" },
+    { view: "schools", label: "設置数", sub: "大学の数と県外進学" },
   ];
 
   let host = null;
