@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>大学進学にともなう都道府県間移動 2015-2025</title>
-<link rel="stylesheet" href="shared/base.css?v=f5254cd5">
+<link rel="stylesheet" href="shared/base.css?v=a63ffd52">
 <style>
   .legend .bar { width: 200px; height: 10px; border-radius: 2px; border: 1px solid var(--border); }
   .legend .ticks {
@@ -35,22 +35,26 @@
 <body>
 <div class="wrap">
   <h1>大学進学にともなう都道府県間移動</h1>
-  <p class="lede">
-    縦軸が出身高校の所在地、横軸が入学した大学（学部）の所在地。セルの濃さが入学者数である。
-    左上から右下に伸びる対角線上は県内進学。
-    出典は文部科学省「学校基本調査」の各年度「出身高校の所在地県別入学者数」。
-  </p>
 
   <div id="viz-chrome"></div>
 
   <div class="panel">
     <div class="controls">
-      <div class="segmented" role="group" aria-label="表示する値">
-        <button type="button" id="mode-count" aria-pressed="true">実数</button>
-        <button type="button" id="mode-share" aria-pressed="false">流出構成比</button>
-      </div>
-      <button type="button" class="button" id="clear" disabled>選択を解除</button>
+      <span class="field">
+        セルの色
+        <span class="segmented" role="group" aria-label="セルの色が表すもの">
+          <button type="button" id="mode-count" aria-pressed="true">入学者数</button>
+          <button type="button" id="mode-share" aria-pressed="false">行き先の割合</button>
+        </span>
+        <span class="note" id="mode-note"></span>
+      </span>
     </div>
+
+    <p class="about">
+      縦軸が出身高校の所在地、横軸が入学した大学（学部）の所在地。
+      左上から右下に伸びる対角線上は県内進学。
+      出典は文部科学省「学校基本調査」の各年度「出身高校の所在地県別入学者数」。
+    </p>
 
     <p class="hints">
       <span>セルにカーソルを合わせると内訳</span>
@@ -98,7 +102,6 @@
   </div>
 
   <footer>
-    年をまたぐ動きは色の補間で見せているが、数値は常に最寄りの年度の実数である。
     「その他」（海外・不明の高校出身）は都道府県に対応付けられないため除外している。
   </footer>
 </div>
@@ -106,8 +109,8 @@
 <script src="data.js?v=220726bf"></script>
 <script src="shared/theme.js?v=044e1c62"></script>
 <script src="shared/format.js?v=a82415ab"></script>
-<script src="shared/state.js?v=081c6afe"></script>
-<script src="shared/chrome.js?v=3fafdd8e"></script>
+<script src="shared/state.js?v=bcd0f174"></script>
+<script src="shared/chrome.js?v=57d70975"></script>
 <script src="shared/flowtable.js?v=91b3a135"></script>
 <script>
 (() => {
@@ -420,19 +423,14 @@
     return { row, col };
   }
 
-  const clearButton = document.getElementById("clear");
-
   // 注目県として外へ渡すのは行、つまり出身県のほう。どの県から出た流れを見ているかが主語になる。
   function setPinned(cell, { silent = false } = {}) {
     state.pinned = cell;
-    clearButton.disabled = cell === null;
     if (!silent) VIZ.state.patch({ pref: cell === null ? null : format.toJis(cell.row) });
     if (!cell) hideTooltip();
     renderTable(VIZ.chrome.yearIndex());
     draw();
   }
-
-  clearButton.addEventListener("click", () => setPinned(null));
 
   canvas.addEventListener("mousemove", (event) => {
     const cell = cellAt(event);
@@ -554,12 +552,21 @@
     count: document.getElementById("mode-count"),
     share: document.getElementById("mode-share"),
   };
+  const modeNote = document.getElementById("mode-note");
+
+  // 2つのモードは分母が違う。どちらも「濃いほど多い」だが、比べている相手が違う。
+  // ボタンの語だけでは伝わらないので、選んだほうの意味をその場で言い切る。
+  const MODE_MEANING = {
+    count: "濃さは入学者数そのもの。大きい県どうしの太い流れが目立つ。",
+    share: "濃さは、出身県の県外進学者を100%としたときの行き先の割合。小さい県の向かう先が見える。",
+  };
 
   function setMode(mode, { silent = false } = {}) {
     state.mode = mode;
     for (const [key, other] of Object.entries(modeButtons)) {
       other.setAttribute("aria-pressed", key === mode ? "true" : "false");
     }
+    modeNote.textContent = MODE_MEANING[mode];
     if (!silent) VIZ.state.patch({ mode });
     renderLegend();
     draw();

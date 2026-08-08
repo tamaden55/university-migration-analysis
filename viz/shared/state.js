@@ -6,8 +6,8 @@ window.VIZ = window.VIZ || {};
 //
 //   #view=heatmap&year=2019&pref=13&mode=share
 //
-// 再生中の小数年度は書かない。書くと共有した URL が中途半端な補間位置を指す。
-// ハッシュに入るのは整数年度だけで、補間は実行時の状態に留める。
+// 載せるのはビューをまたいで意味を持つ状態と、各ビューの見せ方の選択だけ。
+// フロー図の拡大位置のように、共有された側に押し付けたくないものは載せない。
 VIZ.state = (() => {
   const YEARS = OD_DATA.years;
   const LAST_JIS = OD_DATA.prefectures.length;
@@ -25,9 +25,6 @@ VIZ.state = (() => {
     year: { def: YEARS[YEARS.length - 1], parse: (raw) => (YEARS.includes(Number(raw)) ? Number(raw) : null) },
     pref: { def: null, parse: integer(1, LAST_JIS) },
     mode: { def: "count", parse: oneOf(["count", "share"]) },
-    area: { def: "all", parse: oneOf(["all", "east", "west"]) },
-    threshold: { def: 500, parse: integer(200, 5000) },
-    size: { def: "send", parse: oneOf(["send", "take"]) },
     sort: { def: "count", parse: oneOf(["count", "density", "code"]) },
     axis: { def: "ratio", parse: oneOf(["ratio", "density", "advance"]) },
   };
