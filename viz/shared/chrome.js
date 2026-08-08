@@ -7,6 +7,7 @@ window.VIZ = window.VIZ || {};
 //
 // タブには切り口の副題を添える。「ヒートマップ / フロー図 / 設置数」だけでは
 // 別々の3ページに見え、同じデータを3通りに見ているという関係が読めない。
+// 副題がその役をするので、タブ群の上に見出しは置かない（読み上げ用の名前だけ残す）。
 VIZ.chrome = (() => {
   const YEARS = OD_DATA.years;
   const SPAN = YEARS.length - 1;
@@ -46,8 +47,7 @@ VIZ.chrome = (() => {
     }).join("");
 
     return `<div class="group">
-        <span class="caption" id="viz-tabs-caption">同じデータの見方</span>
-        <nav class="tabs" aria-labelledby="viz-tabs-caption">${tabs}</nav>
+        <nav class="tabs" aria-label="同じデータの見方">${tabs}</nav>
       </div>
       <div class="group timeline">
         <label class="caption" for="viz-slider">年度</label>
