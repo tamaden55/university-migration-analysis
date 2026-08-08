@@ -313,8 +313,10 @@
 
   const totalUniversities = items.reduce((sum, item) => sum + item.universities, 0);
   const totalHighSchools = items.reduce((sum, item) => sum + item.highSchools, 0);
-  barsNote.textContent = `${S.year}年度 / 大学 ${format.count(totalUniversities)}校、`
-    + `高校 ${format.count(totalHighSchools)}校`;
+  // 年度が動かないことは、動かない表そのものの見出しで言う。ヘッダ側に但し書きを置くと、
+  // どの図の話なのかが読み手の側で結びつかない。
+  barsNote.textContent = `${S.year}年度のみ（年度を動かしても変わらない）`
+    + ` / 大学 ${format.count(totalUniversities)}校、高校 ${format.count(totalHighSchools)}校`;
 
   const sortButtons = {
     count: document.getElementById("sort-count"),
@@ -605,7 +607,6 @@
 
   VIZ.chrome.mount({
     view: "schools",
-    note: `大学数・高校数は${S.year}年度のみ。散布図と表は年度で動く。`,
     onYear: () => setYear(VIZ.chrome.yearIndex()),
     onTheme: () => {
       theme = VIZ.theme.read();
