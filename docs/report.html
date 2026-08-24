@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>夏季研修レポート 大学進学時の都道府県間人口移動</title>
+<style>
+/* ------------------------------------------------------------------
+   印刷を前提にした版面。A4・6ページ。
+   .sheet を実寸で置き、画面でも紙と同じ改ページ位置で見えるようにする。
+   ------------------------------------------------------------------ */
+@page { size: A4 portrait; margin: 0; }
+
+:root {
+  --ink:        #16181c;
+  --ink-soft:   #4a4f57;
+  --ink-faint:  #7a808a;
+  --rule:       #c9ccd2;
+  --rule-hair:  #e2e4e8;
+  --accent:     #1f3a5f;
+  --tint:       #f2f4f7;
+  --sheet-w:    210mm;
+  --sheet-h:    297mm;
+  --pad-x:      18mm;
+  --pad-t:      16mm;
+  --pad-b:      13mm;
+}
+
+* { box-sizing: border-box; }
+
+html { background: #8a8d93; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "MS Mincho", serif;
+  font-size: 9pt;
+  line-height: 1.66;
+  font-feature-settings: "palt" 1;
+  text-align: justify;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.sheet {
+  position: relative;
+  width: var(--sheet-w);
+  height: var(--sheet-h);
+  padding: var(--pad-t) var(--pad-x) var(--pad-b);
+  margin: 0 auto 8mm;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.35);
+}
+
+@media print {
+  html { background: #fff; }
+  .sheet { margin: 0; box-shadow: none; break-after: page; }
+  .sheet:last-child { break-after: auto; }
+}
+
+/* --- 柱と ノンブル --------------------------------------------- */
+.runhead {
+  position: absolute;
+  top: 9mm; left: var(--pad-x); right: var(--pad-x);
+  display: flex; justify-content: space-between;
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 7pt; color: var(--ink-faint);
+  letter-spacing: .04em;
+  border-bottom: .4pt solid var(--rule-hair);
+  padding-bottom: 1.5mm;
+}
+.folio {
+  position: absolute;
+  bottom: 9mm; left: var(--pad-x); right: var(--pad-x);
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 7pt; color: var(--ink-faint);
+  border-top: .4pt solid var(--rule-hair);
+  padding-top: 1.5mm;
+}
+
+/* --- 標題まわり ------------------------------------------------ */
+.docmark {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 8pt; letter-spacing: .22em; color: var(--accent);
+  border-bottom: 1.6pt solid var(--accent);
+  padding-bottom: 1.3mm; margin-bottom: 4mm;
+}
+h1 {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 15pt; line-height: 1.38; font-weight: 700;
+  margin: 0 0 2.5mm; letter-spacing: .01em;
+}
+.subtitle {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 9.5pt; font-weight: 400; color: var(--ink-soft);
+  margin: 0 0 4.5mm;
+}
+.docmeta {
+  display: grid; grid-template-columns: 22mm 1fr 22mm 1fr;
+  gap: 0;
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 8.5pt;
+  border-top: .4pt solid var(--rule);
+  border-bottom: .4pt solid var(--rule);
+  margin-bottom: 5mm;
+}
+.docmeta dt {
+  color: var(--ink-faint); padding: 1.1mm 0; margin: 0;
+  border-bottom: .4pt solid var(--rule-hair);
+}
+.docmeta dd {
+  padding: 1.1mm 0; margin: 0;
+  border-bottom: .4pt solid var(--rule-hair);
+}
+.docmeta dt:last-of-type, .docmeta dd:last-of-type { border-bottom: 0; }
+
+/* --- 見出し ---------------------------------------------------- */
+.part {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 8.5pt; font-weight: 700; letter-spacing: .16em;
+  color: var(--accent);
+  border-top: 1.2pt solid var(--accent);
+  border-bottom: .4pt solid var(--rule);
+  padding: 1.4mm 0 1.2mm; margin: 0 0 4mm;
+}
+
+h2 {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 10.5pt; font-weight: 700; line-height: 1.45;
+  margin: 4.2mm 0 1.8mm;
+  padding-left: 2.6mm;
+  border-left: 2.4pt solid var(--accent);
+  break-after: avoid;
+}
+.sheet > h2:first-of-type, .sheet > .part + h2 { margin-top: 0; }
+h3 {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 9pt; font-weight: 700;
+  margin: 3.5mm 0 1.2mm;
+  break-after: avoid;
+}
+p { margin: 0 0 2.1mm; }
+p:last-child { margin-bottom: 0; }
+
+/* --- リスト ---------------------------------------------------- */
+ul.plain { margin: 0 0 2.4mm; padding-left: 4.2mm; }
+ul.plain li { margin-bottom: .8mm; }
+ol.num { margin: 0 0 2.4mm; padding-left: 5mm; }
+ol.num li { margin-bottom: .8mm; }
+
+.lead {
+  font-size: 9.2pt; line-height: 1.66;
+  margin-bottom: 2.6mm;
+}
+
+/* --- 囲み ------------------------------------------------------ */
+.box {
+  background: var(--tint);
+  border: .4pt solid var(--rule);
+  padding: 2.8mm 3.2mm;
+  margin: 0 0 3mm;
+  break-inside: avoid;
+}
+.box h3 { margin-top: 0; }
+.box .rows { display: grid; grid-template-columns: 26mm 1fr; gap: .6mm 3mm; }
+.box .rows dt {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 8.5pt; color: var(--accent); font-weight: 700;
+}
+.box .rows dd { margin: 0; font-size: 9pt; }
+
+.callout {
+  border-left: 2.4pt solid var(--ink-faint);
+  background: #fafbfc;
+  padding: 2.3mm 3mm;
+  margin: 0 0 3mm;
+  font-size: 8.5pt;
+  break-inside: avoid;
+}
+.callout .tag {
+  display: block;
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 8pt; font-weight: 700; letter-spacing: .1em;
+  color: var(--ink-faint); margin-bottom: .8mm;
+}
+
+/* --- 表 -------------------------------------------------------- */
+figure { margin: 0 0 3.2mm; break-inside: avoid; }
+figcaption {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 7.6pt; line-height: 1.55; color: var(--ink-soft);
+  margin-bottom: 1.2mm;
+}
+figcaption b { color: var(--ink); font-weight: 700; margin-right: .8em; }
+figure.fig figcaption { margin: 1.2mm 0 0; }
+
+table {
+  width: 100%; border-collapse: collapse;
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 8pt; line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+th, td { padding: .9mm 1.4mm; text-align: right; }
+th:first-child, td:first-child { text-align: left; }
+thead th {
+  border-bottom: .8pt solid var(--ink);
+  font-weight: 700; color: var(--ink);
+  vertical-align: bottom;
+}
+table.rule thead tr:first-child th { border-bottom: 0; }
+tbody td, tbody th { border-bottom: .4pt solid var(--rule-hair); }
+tbody tr:last-child td, tbody tr:last-child th { border-bottom: .8pt solid var(--ink); }
+tbody th { font-weight: 400; }
+tr.sep td, tr.sep th { border-top: .4pt solid var(--rule); }
+td.neg { color: var(--ink); }
+/* 左右は別々の一覧なので、横罫を跨がせずに並べる */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12mm; }
+
+.unit {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 7.2pt; color: var(--ink-faint);
+  text-align: right; margin: .8mm 0 0;
+}
+
+/* --- 図 -------------------------------------------------------- */
+figure.fig img {
+  display: block; width: 100%; height: auto;
+  border: .4pt solid var(--rule);
+}
+.fig-wide { width: 100%; }
+.tbl-120 { width: 116mm; }
+.fig-155 { width: 164mm; margin-left: auto; margin-right: auto; }
+.fig-132 { width: 152mm; margin-left: auto; margin-right: auto; }
+
+/* --- パイプライン図 -------------------------------------------- */
+.pipeline { width: 100%; height: auto; display: block; margin: 1mm 0 2mm; }
+.pipeline text {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  fill: var(--ink);
+}
+
+code, .mono {
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 8pt;
+}
+pre.cypher {
+  background: var(--tint);
+  border: .4pt solid var(--rule);
+  padding: 2mm 2.6mm;
+  margin: 0 0 2.4mm;
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 7.8pt; line-height: 1.6;
+  white-space: pre-wrap;
+  break-inside: avoid;
+}
+
+.formula {
+  text-align: center;
+  background: var(--tint);
+  border: .4pt solid var(--rule);
+  padding: 2mm 3mm;
+  margin: 0 0 2.4mm;
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: 8.5pt;
+  break-inside: avoid;
+}
+
+.refs {
+  font-size: 7.8pt; line-height: 1.5;
+  border-top: .4pt solid var(--rule);
+  padding-top: 1.6mm;
+}
+.refs ol { margin: 0; padding-left: 5mm; }
+.refs li { margin-bottom: .7mm; }
+
+.small { font-size: 8pt; color: var(--ink-soft); line-height: 1.6; }
+.nowrap { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     1ページ目
+     ================================================================ -->
+
+<section class="sheet">
+  <div class="docmark">夏 季 研 修 レ ポ ー ト</div>
+
+  <h1>大学進学時の都道府県間人口移動の可視化</h1>
+  <p class="subtitle">学生募集業務へのデータ活用（生成AI、グラフデータベース）</p>
+
+  <dl class="docmeta">
+    <dt>提出日</dt><dd>2026年9月7日</dd>
+    <dt>所属</dt><dd>入学部</dd>
+    <dt>報告者</dt><dd>中村 文武</dd>
+    <dt>研修期間</dt><dd>2026年9月3日〜4日</dd>
+  </dl>
+
+  <div class="part">第 1 部 　 学 生 募 集 業 務 へ の 活 用</div>
+
+  <h2>1. 要旨</h2>
+
+  <ol class="num">
+    <li>大学進学時の県外進学率は、2015年度の56.4%から2025年度の54.6%へと緩やかに低下している。</li>
+    <li>一方、東京都の純流入は同期間に67,861人から74,737人へ増加している。</li>
+    <li>1都3県の純流入は東京都に集中している。同期間に東京都は6,876人増加した一方、神奈川県・千葉県・埼玉県は合計10,959人減少しており、1都3県を合わせた純流入は64,671人から60,588人へ減少している。</li>
+    <li>県内の大学数を増やせば県外進学率が低下するとは限らない。大学数と県外進学率の単純な相関は、高校数と共有する都道府県規模の影響と区別しにくい。</li>
+  </ol>
+
+  <h2>2. 使用したデータと集計</h2>
+
+  <p>2015年度から2025年度までの文部科学省「学校基本調査」の「出身高校の所在地県別　入学者数」を、<span class="nowrap">出身高校の所在地 → 入学した大学（学部）の所在地</span>という方向の進学移動として集計した。</p>
+
+  <div class="box">
+    <h3>用語の定義</h3>
+    <dl class="rows">
+      <dt>県外進学率</dt><dd>当該都道府県の高校出身の大学入学者のうち、当該都道府県以外に所在する大学へ入学した者の割合</dd>
+      <dt>流入 / 流出</dt><dd>県外の高校出身者が当該都道府県の大学へ入学した人数 / 当該都道府県の高校出身者が県外の大学へ入学した人数</dd>
+      <dt>純流入</dt><dd>流入から流出を引いた人数。正なら受け入れ超過、負なら送り出し超過</dd>
+      <dt>受け入れ倍率</dt><dd>当該都道府県の大学入学者数 ÷ 当該都道府県の高校出身の大学入学者数。分子には県外出身者と「その他」を含む。入試の志願倍率とは異なる。</dd>
+    </dl>
+  </div>
+
+  <p class="small">本報告で扱うのは入学者数であり、住民票上の移動ではない。大学の所在地は本部所在地ではなく、入学した学部の所在地である。高等学校を経ずに入学した者（外国の12年課程修了者、専修学校高等課程修了者、高等学校卒業程度認定試験合格者など）を指す「その他」（年間1.5万〜2.2万人）は都道府県に対応付けられないため、集計から除外した。</p>
+
+  <h2>3. 全国の推移と都道府県別の偏り</h2>
+
+  <figure>
+    <figcaption><b>表1</b>47都道府県間でみた大学入学者の推移。県外進学率は低下している一方、東京都の純流入は増加している。単位は人。1都3県は東京都・神奈川県・千葉県・埼玉県を指す。</figcaption>
+    <table>
+      <thead>
+        <tr><th>年度</th><th>入学者（47都道府県内）</th><th>うち県外進学者</th><th>県外進学率</th><th>東京都の純流入</th><th>1都3県の純流入</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>2015</th><td>602,476</td><td>339,771</td><td>56.4%</td><td>+67,861</td><td>+64,671</td></tr>
+        <tr><th>2020</th><td>615,050</td><td>343,736</td><td>55.9%</td><td>+68,182</td><td>+60,560</td></tr>
+        <tr><th>2025</th><td>623,307</td><td>340,256</td><td>54.6%</td><td>+74,737</td><td>+60,588</td></tr>
+      </tbody>
+    </table>
+  </figure>
+
+  <h2>4. 進学者の出身地と進学先</h2>
+
+  <p>都道府県ごとの偏りを、47×47のヒートマップで確認する（図1）。縦軸は出身高校の所在地、横軸は進学先の大学の所在地である。</p>
+
+  <div class="folio"><span>大学進学時の都道府県間人口移動</span><span>1 / 6</span></div>
+</section>
+
+<section class="sheet">
+  <div class="runhead"><span>学生募集業務への活用</span><span>夏季研修レポート</span></div>
+
+
+  <figure class="fig fig-155">
+    <img src="figs/fig1-heatmap.png" alt="47都道府県間の進学移動を示すヒートマップ。東京都の列が全国的に濃い。">
+    <figcaption><b>図1</b>2025年度。濃さは、出身都道府県の県外進学者に占める進学先の割合を示す。人数ではなく割合で示すため、進学者数が少ない都道府県の進学先の傾向も確認できる。</figcaption>
+  </figure>
+
+  <p>図1では、東京都の列が多くの都道府県で濃く表示されている。県外へ進学した高校出身者のうち、東京都の大学へ進学する割合が高いことを示す。東京都以外では、対角線の周辺、すなわち隣接する都道府県間の移動にも濃い部分がみられる。</p>
+
+  <div class="callout">
+    <span class="tag">画面で見る</span>
+    <p style="margin-bottom:0">図1と同じ行列を、年度と都道府県を選びながら操作できる形で公開している。同じ画面からフロー図と設置数へも切り替えられる。<br><span class="mono">https://tamaden55.github.io/university-migration-analysis/</span></p>
+  </div>
+
+  <figure>
+    <figcaption><b>表2</b>2025年度の純流入。受け入れ超過は8都府県であり、残る39道県は送り出し超過である。</figcaption>
+    <div class="pair">
+      <table>
+        <thead>
+          <tr><th>受け入れ超過（上位5）</th><th>純流入</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>東京都</th><td>+74,737</td></tr>
+          <tr><th>京都府</th><td>+18,817</td></tr>
+          <tr><th>大阪府</th><td>+10,979</td></tr>
+          <tr><th>愛知県</th><td>+3,838</td></tr>
+          <tr><th>福岡県</th><td>+3,210</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead>
+          <tr><th>送り出し超過（下位5）</th><th>純流入</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>茨城県</th><td>−10,541</td></tr>
+          <tr><th>埼玉県</th><td>−9,398</td></tr>
+          <tr><th>静岡県</th><td>−9,108</td></tr>
+          <tr><th>長野県</th><td>−5,570</td></tr>
+          <tr><th>岐阜県</th><td>−5,163</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="unit">単位: 人。ほかに宮城県・石川県・神奈川県が受け入れ超過。</p>
+  </figure>
+
+  <div class="folio"><span>大学進学時の都道府県間人口移動</span><span>2 / 6</span></div>
+</section>
+
+<section class="sheet">
+  <div class="runhead"><span>学生募集業務への活用</span><span>夏季研修レポート</span></div>
+
+  <p>行き先の散らばり方は出身都道府県によって大きく異なる。神奈川県の高校出身者は、県外へ進学した者の85%が東京都へ向かう。埼玉県は75%、千葉県は71%、滋賀県は京都府へ59%、岐阜県は愛知県へ60%と、いずれも1か所に集中する。一方、広島県は最も多い進学先の大阪府でも13%で、岡山県15%、石川県15%と、行き先が全国に分散する。表2で同じ送り出し超過に分類される都道府県でも、進学先が特定の1か所に定まっている場合と、定まっていない場合がある。</p>
+
+  <figure>
+    <figcaption><b>表3</b>県外へ進学した者のうち、最も多い進学先が占める割合。2025年度。集中度の高い3県と低い3県。</figcaption>
+    <div class="pair">
+      <table>
+        <thead>
+          <tr><th>出身都道府県</th><th>最も多い進学先</th><th>割合</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>神奈川県</th><td>東京都</td><td>85%</td></tr>
+          <tr><th>埼玉県</th><td>東京都</td><td>75%</td></tr>
+          <tr><th>岐阜県</th><td>愛知県</td><td>60%</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead>
+          <tr><th>出身都道府県</th><th>最も多い進学先</th><th>割合</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>石川県</th><td>東京都</td><td>15%</td></tr>
+          <tr><th>岡山県</th><td>大阪府</td><td>15%</td></tr>
+          <tr><th>広島県</th><td>大阪府</td><td>13%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </figure>
+
+  <h2>5. 首都圏集中ではなく、東京集中が顕著である</h2>
+
+  <figure class="tbl-120">
+    <figcaption><b>表4</b>1都3県における純流入の推移。単位は人。</figcaption>
+    <table>
+      <thead>
+        <tr><th>都県</th><th>2015</th><th>2020</th><th>2025</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>東京都</th><td>+67,861</td><td>+68,182</td><td>+74,737</td></tr>
+        <tr><th>神奈川県</th><td>+4,411</td><td>+1,465</td><td>+361</td></tr>
+        <tr><th>千葉県</th><td>−4,193</td><td>−3,138</td><td>−5,112</td></tr>
+        <tr><th>埼玉県</th><td>−3,408</td><td>−5,949</td><td>−9,398</td></tr>
+        <tr class="sep"><th>3県 計</th><td>−3,190</td><td>−7,622</td><td>−14,149</td></tr>
+        <tr><th>1都3県 計</th><td>+64,671</td><td>+60,560</td><td>+60,588</td></tr>
+      </tbody>
+    </table>
+  </figure>
+
+  <p>1都3県全体の純流入は、東京都の受け入れ超過によって成り立っている。一つの地域として集計すると、東京都の増加とほかの3県の減少が混ざり、どちらの動きも見えなくなる。学生募集の分析では、東京都をほかの3県と分けて扱う必要がある。</p>
+
+  <h2>6. 県外進学率は大学数では説明できない</h2>
+
+  <p>県内に大学進学の選択肢が多くあれば県外進学を防げる、という議論がある。果たして事実であろうか。図2は、各都道府県の県外進学率と「高校100校当たりの大学数」の関係をみたものである。</p>
+
+  <figure class="fig fig-132">
+    <img src="figs/fig2-density.png" alt="横軸に高校100校当たりの大学数、縦軸に県外進学率をとった47都道府県の散布図。右下がりだがばらつきが大きい。">
+    <figcaption><b>図2</b>2025年度。破線は47都道府県に当てはめた回帰直線 <span class="nowrap">県外進学率 ＝ 89.0 − 1.60 × 高校100校当たりの大学数</span>。全体の傾向を示すもので、個々の都道府県の県外進学率を予測するものではない。</figcaption>
+  </figure>
+
+  <div class="folio"><span>大学進学時の都道府県間人口移動</span><span>3 / 6</span></div>
+</section>
+
+<section class="sheet">
+  <div class="runhead"><span>学生募集業務への活用</span><span>夏季研修レポート</span></div>
+
+  <p>回帰直線から離れた奈良県は、高校100校当たり大学20.4校で全国3位の水準にありながら、県外進学率は85%である。ほぼ同じ20.9校の福岡県は34%で、51ポイントの差がある。岐阜県と宮城県も密度は15.9校と15.6校でほぼ同じだが、県外進学率は78%と45%である。大学数の密度が近い都道府県の間でも、県外進学率は30ポイント以上開く。</p>
+
+  <p>大学数の密度が同程度でも県外進学率が高い都道府県では、県外進学者の行き先が近隣の大都市圏に集中している傾向が見られる。奈良県は県外へ進学した者の46%が大阪府へ、岐阜県は60%が愛知県（名古屋市）へ向かう。一方、福岡県と宮城県の最も多い進学先はいずれも東京都で、それぞれ16%と28%にとどまる。両県には福岡市・仙台市があり、周辺地域からの進学を受け入れる側にある。福岡県への県外からの流入11,178人のうち67%が九州・沖縄から、宮城県への流入6,044人のうち61%が東北からで、いずれも純流入は正である。</p>
+
+  <figure>
+    <figcaption><b>表5</b>大学数の密度が近い2組の比較。2025年度。集中度は県外進学者のうち最も多い進学先が占める割合。</figcaption>
+    <table>
+      <thead>
+        <tr><th>都道府県</th><th>高校100校当たり大学数</th><th>県外進学率</th><th>最も多い進学先</th><th>集中度</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>奈良県</th><td>20.4</td><td>85%</td><td>大阪府</td><td>46%</td></tr>
+        <tr><th>福岡県</th><td>20.9</td><td>34%</td><td>東京都</td><td>16%</td></tr>
+        <tr class="sep"><th>岐阜県</th><td>15.9</td><td>78%</td><td>愛知県（名古屋市）</td><td>60%</td></tr>
+        <tr><th>宮城県</th><td>15.6</td><td>45%</td><td>東京都</td><td>28%</td></tr>
+      </tbody>
+    </table>
+  </figure>
+
+  <p>ただし、これは行き先の分布を記述したものであり、距離や進学先の規模を変数として用いた分析ではない。近隣の中核都市への流出が県外進学率を高めているとまでは、このデータからは言えない。</p>
+
+  <div class="callout">
+    <span class="tag">解釈上の留意点</span>
+    <p style="margin-bottom:0">以上は2025年度の横断面を対象に、n=47で算出した相関であり、因果関係の方向は特定できない。大学数の密度と県外進学率の関係には、大学の学部構成、近隣県への距離、進学先の選好など、ここで扱っていない要因が含まれ得る。これらを検討するには、移動人数を距離や所得などで説明する重力モデルが必要である（11節）。また、扱っているのは進学時点の移動であり、卒業後の就職先は対象としていない。</p>
+  </div>
+
+  <div class="folio"><span>大学進学時の都道府県間人口移動</span><span>4 / 6</span></div>
+</section>
+
+<section class="sheet">
+  <div class="runhead"><span>技術習得の内容</span><span>夏季研修レポート</span></div>
+
+  <div class="part">第 2 部 　 技 術 習 得 の 内 容</div>
+
+  <h2>7. 要旨</h2>
+
+  <ol class="num">
+    <li>公開統計の取得から可視化までを、同じコマンドで再実行できる一連の処理として構築した。設計判断とデータの妥当性検証は報告者が行い、実装と探索は生成AI（Claude Code）に担当させた。</li>
+    <li>検証を処理そのものに組み込んだ。47都道府県の合計が原表の「計」と一致しなければ変換を中断するため、異常を検出しないまま後段へ進むことがない。</li>
+    <li>出身地と進学先を縦横に並べた表（OD表）をノードとエッジで表現すると、都道府県間のつながりをたどる問いを記述できる。ただし本研修で行ったのは考え方の学習とCypherの記述までで、グラフデータベースの導入には至っていない。</li>
+    <li>可視化3ページは外部ライブラリに依存せず、<span class="mono">file://</span>から直接開ける。年度と注目する都道府県をURLに保持するため、同じURLを共有すれば同じ画面が再現される。</li>
+  </ol>
+
+  <h2>8. データ処理の流れ</h2>
+
+  <p>公開データの取得から可視化までの処理に生成AIを活用した。手作業をできる限り介さない一連の処理として構成し、同一の入力データに対して同じコマンドを実行すれば、同じ成果物を再生成できる。第1部の図1・図2は、この経路で作った可視化ページから書き出したものである。</p>
+
+  <figure class="fig">
+  <svg class="pipeline" viewBox="-1.5 -1.5 665 136" role="img" aria-label="データ処理の流れ図">
+    <defs>
+      <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M0 0 L8 4 L0 8 z" fill="#4a4f57"/>
+      </marker>
+    </defs>
+    <g font-size="10">
+      <rect x="0" y="43" width="112" height="46" fill="#f2f4f7" stroke="#c9ccd2"/>
+      <text x="56" y="62" text-anchor="middle" font-weight="700">学校基本調査</text>
+      <text x="56" y="77" text-anchor="middle" font-size="8" fill="#4a4f57">xlsx・2015〜2025年度</text>
+
+      <rect x="152" y="0" width="146" height="30" fill="#fff" stroke="#c9ccd2"/>
+      <text x="225" y="13" text-anchor="middle" font-size="8.5">build_od.py</text>
+      <text x="225" y="25" text-anchor="middle" font-size="8" fill="#4a4f57">OD表 → ノードと有向エッジ</text>
+
+      <rect x="152" y="34" width="146" height="30" fill="#fff" stroke="#c9ccd2"/>
+      <text x="225" y="47" text-anchor="middle" font-size="8.5">build_capacity.py</text>
+      <text x="225" y="59" text-anchor="middle" font-size="8" fill="#4a4f57">設置者別の入学者数</text>
+
+      <rect x="152" y="68" width="146" height="30" fill="#fff" stroke="#c9ccd2"/>
+      <text x="225" y="81" text-anchor="middle" font-size="8.5">build_paths.py</text>
+      <text x="225" y="93" text-anchor="middle" font-size="8" fill="#4a4f57">高校卒業者の進路</text>
+
+      <rect x="152" y="102" width="146" height="30" fill="#fff" stroke="#c9ccd2"/>
+      <text x="225" y="115" text-anchor="middle" font-size="8.5">build_schools.py</text>
+      <text x="225" y="127" text-anchor="middle" font-size="8" fill="#4a4f57">大学数・高校数</text>
+
+      <rect x="340" y="43" width="104" height="46" fill="#f2f4f7" stroke="#c9ccd2"/>
+      <text x="392" y="62" text-anchor="middle" font-weight="700">CSV 49件</text>
+      <text x="392" y="77" text-anchor="middle" font-size="8" fill="#4a4f57">検証を通過した中間データ</text>
+
+      <rect x="486" y="15" width="176" height="46" fill="#fff" stroke="#1f3a5f" stroke-width="1"/>
+      <text x="574" y="30" text-anchor="middle" font-size="9" font-weight="700">可視化3ページ</text>
+      <text x="574" y="43" text-anchor="middle" font-size="8" fill="#4a4f57">ヒートマップ・フロー図・設置数</text>
+      <text x="574" y="55" text-anchor="middle" font-size="7.5" fill="#7a808a">build_viz_data.py</text>
+
+      <rect x="486" y="71" width="176" height="46" fill="#fff" stroke="#7a808a" stroke-width="1" stroke-dasharray="3 2"/>
+      <text x="574" y="86" text-anchor="middle" font-size="9" font-weight="700" fill="#4a4f57">Neo4j</text>
+      <text x="574" y="99" text-anchor="middle" font-size="8" fill="#4a4f57">Cypher による問い合わせ</text>
+      <text x="574" y="111" text-anchor="middle" font-size="7.5" fill="#7a808a">import.cypher</text>
+
+      <g stroke="#4a4f57" fill="none">
+        <path d="M112 66 H132"/>
+        <path d="M132 15 V117"/>
+        <path d="M298 15 H320"/>
+        <path d="M298 49 H320"/>
+        <path d="M298 83 H320"/>
+        <path d="M298 117 H320"/>
+        <path d="M320 15 V117"/>
+        <path d="M444 66 H466"/>
+        <path d="M466 38 V66"/>
+        <path d="M466 66 V94" stroke-dasharray="3 2"/>
+      </g>
+      <g stroke="#4a4f57" fill="none" marker-end="url(#ar)">
+        <path d="M132 15 H150"/>
+        <path d="M132 49 H150"/>
+        <path d="M132 83 H150"/>
+        <path d="M132 117 H150"/>
+        <path d="M320 66 H338"/>
+        <path d="M466 38 H484"/>
+        <path d="M466 94 H484" stroke-dasharray="3 2"/>
+      </g>
+    </g>
+  </svg>
+    <figcaption><b>図3</b>取得から可視化までの経路。中間データは5種類で、うち4種類は年度別11件と全年度分1件からなる。学校数のみ2025年度の1件である。破線は、Cypherを書いたが実行していない経路。</figcaption>
+  </figure>
+
+  <h3>年度により異なる表形式</h3>
+
+  <p>11年分の表は、年度により形式が異なる（表6）。セル位置を固定して読み取ると、形式の変わった年度で参照先がずれる。このため、県名の一致によりヘッダ行と行見出し列を年度ごとに検出する方式を採用した。高校卒業者の進路の表も同様で、2019年度以前と2020年度以降で就職者の内訳の区分が変わるため、見出しの文字列から位置を探している。</p>
+
+  <figure>
+    <figcaption><b>表6</b>「出身高校の所在地県別　入学者数」の表形式。青森県を例にとった。</figcaption>
+    <table>
+      <thead>
+        <tr><th>年度</th><th>「1 計」の表</th><th>列見出し（出身高校の所在地）</th><th>行見出し（大学の所在地）</th></tr>
+      </thead>
+      <tbody>
+        <tr><th>2015〜2020</th><td>2枚に分割</td><td>青　森</td><td>青　森</td></tr>
+        <tr><th>2021</th><td>1枚</td><td>青森県</td><td>青森</td></tr>
+        <tr><th>2022〜2025</th><td>1枚</td><td>青森県</td><td>青森県</td></tr>
+      </tbody>
+    </table>
+    <p class="unit">「青　森」は全角スペースを含み、都府県の接尾辞が付かない。</p>
+  </figure>
+
+  <h3>変換結果の検証</h3>
+  <p>読み取り後は、大学所在地ごとに <span class="mono">47都道府県の合計 + その他 = 表の「計」列</span> となることを検証し、1件でも一致しなければ変換を中断する。設置者別の表には公立の区分がないため、<span class="mono">計 − 国立 − 私立</span> により算出し、負値が生じないことを確認している。学校数も、国立・公立・私立の合計が計と一致することを都道府県ごとに検証している。これにより、異常を検出しないまま処理が進行することを防ぐ。</p>
+
+  <div class="folio"><span>大学進学時の都道府県間人口移動</span><span>5 / 6</span></div>
+</section>
+
+<section class="sheet">
+  <div class="runhead"><span>技術習得の内容</span><span>夏季研修レポート</span></div>
+
+  <h2>9. グラフデータベースとしてモデル化する意味</h2>
+
+  <p>OD表は行列形式であるが、ノードとエッジで表現することで、都道府県間のつながりをたどる問いを記述できる。グラフの形は次のとおりである。</p>
+  <pre class="cypher">(:Prefecture {name})-[:ENTERED_UNIVERSITY_IN {year, movers}]-&gt;(:Prefecture)</pre>
+  <p>年度をノードではなく関係のプロパティとして保持すれば、同じスキーマのまま11年分を1つのグラフに収められる。第1部で用いた指標も、この構造の上で表現できる。純流入は、その都道府県へ入る辺の重みの合計から、出る辺の重みの合計を引いた値にあたる。Cypherでは次のように書ける。</p>
+
+  <pre class="cypher">MATCH (p:Prefecture)
+OPTIONAL MATCH ()-[incoming:ENTERED_UNIVERSITY_IN {year: 2025}]-&gt;(p)
+WITH p, sum(incoming.movers) AS inbound
+OPTIONAL MATCH (p)-[outgoing:ENTERED_UNIVERSITY_IN {year: 2025}]-&gt;()
+RETURN p.name AS prefecture, inbound, sum(outgoing.movers) AS outbound,
+       inbound - sum(outgoing.movers) AS net_inflow
+ORDER BY net_inflow DESC;</pre>
+
+  <p>表3・表5の集中度は、出る辺のうち最も重い1本が、出る辺の重みの合計に占める割合にあたる。ただし、単純な次数中心性は大学定員の規模を再記述するだけになりやすいため、まず人数・構成比・純流入を分けて確認し、PageRankやコミュニティ検出は用いていない。</p>
+
+  <p>ただし、読み込みと問い合わせのCypherは書いたものの、Neo4jを立てて実行してはいない。第1部に載せた数値はいずれもCSVから算出したものである。</p>
+
+  <h2>10. 生成AIの活用と報告者による検証</h2>
+
+  <p>実装にはClaude Code（対話型のコーディング支援）を用いた。</p>
+  <ul class="plain">
+    <li><b>AIに任せた作業</b>　年度ごとに形式の異なるxlsxを読み込む処理、可視化ページの描画コード、配色の検討、リファクタリング。</li>
+    <li><b>報告者が判断した箇所</b>　エッジの方向（列→行を取り違えると流出と流入が反転する）、「その他」を除外する判断、公立を差分で算出する妥当性、断面データから因果関係を主張しないという表現上の線引き。</li>
+    <li><b>検証の仕組み化</b>　合計の一致検査を変換処理に組み込み、生成されたコードの動作を毎回目視せずに確かめられるようにした。</li>
+  </ul>
+  <p>可視化ページでは、説明を足すのではなく、読み取れない操作を外す方針をとった。自動再生・表示のしきい値・ノードの大きさの切り替えは、押した結果として図の何が変わるのかが読み取れず、説明文を添えても伝わらなかったため外した。凡例・軸・ボタンから読み取れることは文で書き直さない、という基準である。</p>
+
+  <p>可視化3ページを、外部ライブラリもビルド工程もなしに<span class="mono">file://</span>から開ける形にし、表示条件をURLに残したのは、業務で画面をそのまま同僚へ渡せるようにするためである。</p>
+
+  <h2>11. 限界と今後の検討課題</h2>
+  <ul class="plain">
+    <li>本報告は構造の把握にとどまり、要因の分離は行っていない。先行研究で用いられる重力モデル（移動人数を距離・所得・大学教育条件で説明する）は未着手である。</li>
+    <li>学校数は2025年度の1年分のみ採用している。出典の2表に併記された前年度の全国計と比べると、大学は813校から812校へ1校、高校は4,774校から4,761校へ13校減り、うち12校が公立である。学校数の変動も調査に値すると考えるが、今回は研修期間の都合上、11年分の追跡を割愛した。</li>
+    <li>実務で活用するには、全国データと自校の出願データを照合し、全国的な傾向と自校の実績が異なる都道府県を把握する工程が必要である。</li>
+  </ul>
+
+  <div class="refs">
+    <ol>
+      <li>田村一軌「大学進学にともなう都道府県間人口移動」アジア成長研究所, 2016年.</li>
+      <li>文部科学省「学校基本調査」高等教育機関／学校調査　第16表「出身高校の所在地県別　入学者数」平成27年度〜令和7年度.</li>
+      <li>文部科学省「学校基本調査」高等学校／卒業後の状況調査　「都道府県別　状況別卒業者数」平成27年度〜令和7年度.</li>
+      <li>文部科学省「学校基本調査」令和7年度　第7表「都道府県別　学校数及び学生数」、第122表「都道府県別学校数」（高等学校　全日制・定時制）.</li>
+    </ol>
+  </div>
+
+  <div class="folio"><span>大学進学時の都道府県間人口移動</span><span>6 / 6</span></div>
+</section>
+
+</body>
+</html>
